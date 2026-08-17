@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/public/:path*", "destination": "/:path*" },
+    { "source": "/favicon.ico", "destination": "/logo.svg" },
+    { "source": "/(.*)", "destination": "/api/index" }
+  ]
+}

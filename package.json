@@ -5,12 +5,14 @@
   "main": "server.js",
   "scripts": {
     "sync": "node sync.js",
+    "build": "node sync.js",
     "start": "node server.js"
   },
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {
+  "dependencies": {},
+  "devDependencies": {
     "sharp": "^0.35.3"
   }
 }
