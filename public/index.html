@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanessas Däck – Däck och fälgar till bra priser</title>
+<meta name="description" content="Hitta däck och fälgar till bra priser. Alltid fraktfritt! Sommar-, vinter- och dubbdäck i alla dimensioner.">
+<meta property="og:title" content="Vanessas Däck – Däck och fälgar till bra priser">
+<meta property="og:description" content="Däck och fälgar till bra priser. Alltid fraktfritt!">
+<meta property="og:type" content="website">
+<meta name="description" content="Vanessas Däck säljer och monterar fälgar och däck. Alltid fraktfritt! Både privatpersoner och företag är välkomna.">
+<link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+
+<header id="site-header" class="site"></header>
+
+<div class="hero">
+  <div class="container">
+    <h1>Däck och fälgar till <span>bra priser</span> – alltid fraktfritt</h1>
+    <p>Vanessas Däck säljer och monterar fälgar och däck. Både privatpersoner och företag är välkomna. Bra service och snabba leveranser.</p>
+    <div class="btns">
+      <a class="btn primary" href="/dack">Handla däck</a>
+      <a class="btn ghost" href="/falgar">Handla fälgar</a>
+    </div>
+  </div>
+</div>
+
+<section class="block">
+  <div class="container">
+    <h2 class="sec">Våra kategorier</h2>
+    <p class="sec-sub">Ett stort sortiment för bilen</p>
+    <div class="cats" id="categories">
+      <div class="cat"><div class="info"><div class="spinner"></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="block alt">
+  <div class="container">
+    <h2 class="sec">Utvalda produkter</h2>
+    <p class="sec-sub">Artiklar som finns i butik just nu</p>
+    <div class="grid" id="featured"></div>
+  </div>
+</section>
+
+<section class="block">
+  <div class="container">
+    <h2 class="sec">Varför Vanessas Däck?</h2>
+    <p class="sec-sub">Vi finns där när du behöver oss som mest</p>
+    <div class="cats">
+      <div class="cat">
+        <div class="info">
+          <h3>🚚 Alltid fraktfritt</h3>
+          <p>Beställ online – vi levererar till din dörr utan fraktkostnad.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <div class="info">
+          <h3>🔧 Montering</h3>
+          <p>Vi säljer och monterar däck och fälgar. Professionell service.</p>
+        </div>
+      </div>
+      <div class="cat">
+        <div class="info">
+          <h3>⭐ Både privat & företag</h3>
+          <p>Vi hjälper både privatpersoner och företag med rätt hjul till rätt pris.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h4>Vanessas Däck</h4>
+        <a href="/bra-att-veta">Bra att veta</a>
+        <a href="/vinterdack-val">Vinterdäck-val</a>
+        <a href="/villkor">Villkor</a>
+        <a href="/kontakta-oss">Kontakta oss</a>
+      </div>
+      <div>
+        <h4>Handla</h4>
+        <a href="/dack">Däck</a>
+        <a href="/falgar">Fälgar</a>
+      </div>
+      <div>
+        <h4>Följ oss</h4>
+        <a href="https://www.facebook.com/Vanessasdack.se">Facebook</a>
+        <a href="https://se.trustpilot.com/review/www.vanessasdack.se">Trustpilot</a>
+        <a href="https://www.blocket.se/butik/vanessas-dack">Blocket Butik</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 Vanessas Däck. Alla rättigheter förbehållna.</span>
+      <span>Alltid fraktfritt!</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/public/app.js"></script>
+<script>
+injectHeader('/');
+
+async function loadCategories() {
+  const res = await fetch('/api/filter-values');
+  const all = await fetch('/api/products?page=1&perPage=1').then(r => r.json()).catch(() => null);
+  const types = await fetch('/api/filter-values?type=dack').then(r => r.json());
+  const ftypes = await fetch('/api/filter-values?type=falgar').then(r => r.json());
+  const total = all ? all.total : 0;
+  const dackCount = types.inches.reduce((s, i) => s + i.count, 0);
+  const falgarCount = ftypes.inches.reduce((s, i) => s + i.count, 0);
+
+  const img1 = await fetch('/api/gallery?type=dack&q=').then(r => r.json()).then(d => d.images[0]?.image || '/public/no-image.svg');
+  const img2 = await fetch('/api/gallery?type=falgar&q=').then(r => r.json()).then(d => d.images[0]?.image || '/public/no-image.svg');
+
+  document.getElementById('categories').innerHTML = `
+    <a class="cat" href="/dack">
+      <div class="imgwrap"><img loading="lazy" src="${img1}" alt="Däck"></div>
+      <div class="info">
+        <h3>Däck</h3>
+        <p>Sommardäck, vinterdäck, dubbdäck och friktionsdäck i alla vanliga dimensioner.</p>
+        <div class="count">${dackCount.toLocaleString('sv-SE')} artiklar</div>
+        <span class="btn dark">Handla däck</span>
+      </div>
+    </a>
+    <a class="cat" href="/falgar">
+      <div class="imgwrap"><img loading="lazy" src="${img2}" alt="Fälgar"></div>
+      <div class="info">
+        <h3>Fälgar</h3>
+        <p>Aluminiumfälgar i många modeller och dimensioner. Hitta rätt fälg till din bil.</p>
+        <div class="count">${falgarCount.toLocaleString('sv-SE')} artiklar</div>
+        <span class="btn dark">Handla fälgar</span>
+      </div>
+    </a>`;
+}
+
+async function loadFeatured() {
+  const res = await fetch('/api/products?stock=1&has_image=1&sort=price_asc&page=1');
+  const d = await res.json();
+  const grid = document.getElementById('featured');
+  if (!d.products || !d.products.length) {
+    grid.innerHTML = '<div class="empty">Inga produkter i lager just nu.</div>';
+    return;
+  }
+  grid.innerHTML = d.products.slice(0, 12).map(p => APP.productCard(p)).join('');
+}
+
+loadCategories();
+loadFeatured();
+</script>
+</body>
+</html>

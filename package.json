@@ -1,0 +1,16 @@
+{
+  "name": "vanessas-stock",
+  "version": "1.0.0",
+  "description": "Lagersynk från vanessasdack.se + webbpanel",
+  "main": "server.js",
+  "scripts": {
+    "sync": "node sync.js",
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "sharp": "^0.35.3"
+  }
+}

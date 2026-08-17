@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skapa konto – Vanessas Däck</title>
+<link rel="stylesheet" href="/public/styles.css">
+<link rel="icon" href="/public/logo.svg">
+</head>
+<body class="page account-page">
+<header id="site-header"></header>
+<main class="container narrow">
+  <h1>Skapa konto</h1>
+  <p class="lead">Med ett konto får du orderhistorik och snabbare utcheckning.</p>
+  <div class="err-msg" id="err" style="display:none"></div>
+  <form id="regForm" onsubmit="return false;">
+    <label>Namn
+      <input type="text" id="name" required autocomplete="name" placeholder="För- och efternamn">
+    </label>
+    <label>E-post
+      <input type="email" id="email" required autocomplete="email" placeholder="din@epost.se">
+    </label>
+    <label>Lösenord (minst 6 tecken)
+      <input type="password" id="password" required autocomplete="new-password" placeholder="Ditt lösenord">
+    </label>
+    <label>Upprepa lösenord
+      <input type="password" id="password2" required autocomplete="new-password" placeholder="Samma lösenord igen">
+    </label>
+    <button type="submit" class="btn" id="regBtn" onclick="doRegister()">Skapa konto</button>
+  </form>
+  <p class="muted" style="margin-top:16px">Har du redan ett konto? <a href="/logga-in">Logga in</a></p>
+</main>
+<footer id="site-footer"></footer>
+<script src="/public/app.js"></script>
+<script>
+async function doRegister() {
+  const name = document.getElementById('name').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const password2 = document.getElementById('password2').value;
+  const err = document.getElementById('err');
+  const btn = document.getElementById('regBtn');
+  if (!name || !email || !password) {
+    err.textContent = 'Fyll i alla fält.';
+    err.style.display = 'block';
+    return;
+  }
+  if (password !== password2) {
+    err.textContent = 'Lösenorden stämmer inte överens.';
+    err.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Skapar konto...';
+  try {
+    const r = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password })
+    });
+    const d = await r.json();
+    if (d.success) {
+      location.href = '/mina-sidor';
+    } else {
+      err.textContent = d.error || 'Kunde inte skapa kontot.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Skapa konto';
+    }
+  } catch (e) {
+    err.textContent = 'Kunde inte nå servern.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Skapa konto';
+  }
+}
+
+injectHeader();
+APP.initAccount();
+</script>
+</body>
+</html>

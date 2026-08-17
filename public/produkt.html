@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Produkt – Vanessas Däck</title>
+<meta name="description" content="Se priser, lagerstatus och dimensioner för däck och fälgar. Beställ online med alltid fraktfritt.">
+<meta property="og:type" content="product">
+<link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+
+<header id="site-header" class="site"></header>
+
+<div class="container">
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><a href="/dack" id="bcCat">Däck</a></div>
+
+  <div class="product" id="product">
+    <div class="spinner"></div>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h4>Vanessas Däck</h4>
+        <a href="/">Hem</a>
+        <a href="/villkor">Villkor</a>
+      </div>
+      <div>
+        <h4>Handla</h4>
+        <a href="/dack">Däck</a>
+        <a href="/falgar">Fälgar</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 Vanessas Däck. Alla rättigheter förbehållna.</span>
+      <span>Alltid fraktfritt!</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/public/app.js"></script>
+<script>
+injectHeader('');
+
+const id = new URLSearchParams(location.search).get('id');
+
+async function load() {
+  const res = await fetch(APP.api + '/product-local?id=' + id);
+  const d = await res.json();
+  if (!d.product) {
+    document.getElementById('product').innerHTML = '<div class="empty"><div class="icon">😕</div>Produkten hittades inte.</div>';
+    return;
+  }
+  const p = d.product;
+  lastProduct = p;
+  document.title = p.manufacturer + ' ' + p.name + ' – Vanessas Däck';
+  document.getElementById('bcCat').textContent = p.type === 'falgar' ? 'Fälgar' : 'Däck';
+  document.getElementById('bcCat').href = p.type === 'falgar' ? '/falgar' : '/dack';
+
+  const images = p.image && p.image.length ? p.image : ['/public/no-image.svg'];
+  const thumbs = images.length > 1
+    ? `<div class="thumbs">${images.map((im, i) => `<img src="${im}" onclick="setMain(this, '${im}')" class="${i === 0 ? 'active' : ''}" alt="Bild ${i + 1}">`).join('')}</div>`
+    : '';
+
+  const delivery = p.external_delivery ? `ca ${p.external_delivery} dagar` : '3–5 dagar';
+
+  const specs = [
+    ['Tillverkare', p.manufacturer],
+    ['Art.nr', p.supplier_reference || p.id],
+    ['Storlek', p.info],
+    ['Fälgdiameter', p.inch ? p.inch + '"' : null],
+    ['Bultar', p.bolt_count || null],
+    ['Bultcirkel', p.bolt_circle || null],
+    ['ET', p.et || null],
+    ['CB', p.cb || null]
+  ].filter(r => r[1] != null && r[1] !== '');
+
+  document.getElementById('product').innerHTML = `
+    <div class="gallery">
+      <div class="main-img"><img id="mainImg" src="${images[0]}" alt="${APP.esc(p.manufacturer)} ${APP.esc(p.name)}" onerror="this.src='/public/no-image.svg'"></div>
+      ${thumbs}
+    </div>
+    <div class="pinfo">
+      <div class="mfg">${APP.esc(p.manufacturer)}</div>
+      <h1>${APP.esc(p.name)}</h1>
+      <div class="dims">${APP.esc(p.info || '')}</div>
+      <div class="stockline">
+        ${APP.stockBadge(p)}
+        ${p.external_stock > 0 ? `<span class="badge b-orange">Leverans ${delivery}</span>` : ''}
+      </div>
+      <div class="price">${p.price ? p.price.toLocaleString('sv-SE') + ' kr' : 'Ring för pris'}<small> /st inkl. moms</small></div>
+      <div class="actions">
+        <select id="qtySel" class="qty-sel">
+          ${[1,2,3,4,5,6,7,8,9,10].map(n => `<option value="${n}">${n} st</option>`).join('')}
+        </select>
+        <button class="btn primary" onclick="addToCart()">Lägg i kundvagn</button>
+        <a class="btn dark" href="/sok?q=${encodeURIComponent(p.manufacturer + ' ' + p.name)}">Hitta liknande</a>
+      </div>
+      <div id="cartMsg" style="display:none; margin-top:12px; padding:12px 16px; background:var(--green-bg); color:var(--green); border-radius:8px; font-weight:600;">
+        ✓ Tillagd i varukorgen – <a href="/varukorg" style="text-decoration:underline">gå till kassan</a>
+      </div>
+      <div class="specs">
+        <h2>Specifikationer</h2>
+        <table>${specs.map(([k, v]) => `<tr><td>${k}</td><td>${APP.esc(String(v))}</td></tr>`).join('')}</table>
+      </div>
+    </div>`;
+}
+
+function setMain(imgEl, src) {
+  document.getElementById('mainImg').src = src;
+  document.querySelectorAll('.thumbs img').forEach(i => i.classList.remove('active'));
+  imgEl.classList.add('active');
+}
+
+function addToCart() {
+  const qty = parseInt(document.getElementById('qtySel').value, 10);
+  const p = lastProduct;
+  APP.addToCart(p, qty);
+  const msg = document.getElementById('cartMsg');
+  msg.style.display = 'block';
+  msg.innerHTML = '✓ Tillagd i varukorgen (' + qty + ' st) – <a href="/varukorg" style="text-decoration:underline">gå till kassan</a>';
+  setTimeout(() => { msg.style.display = 'none'; }, 4000);
+}
+
+let lastProduct = null;
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanessas Däck – Lagersaldo</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #1e4456; }
+  header { background: #1e4456; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  header h1 { font-size: 20px; }
+  header .sub { font-size: 13px; opacity: .8; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
+  input[type=text] { padding: 8px 12px; border: 1px solid #c5d2da; border-radius: 6px; font-size: 14px; width: 320px; max-width: 100%; }
+  label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  button { background: #f6921e; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  button:disabled { opacity: .5; cursor: wait; }
+  table { width: 100%; border-collapse: collapse; background: #fff; }
+  th, td { text-align: left; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #edf1f4; white-space: nowrap; }
+  th { background: #eef3f6; position: sticky; top: 0; }
+  td.wrap { white-space: normal; }
+  .badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 600; }
+  .b-green { background: #e3f6e5; color: #1c7a2d; }
+  .b-orange { background: #fff3e0; color: #b26a00; }
+  .b-red { background: #fde8e8; color: #c0392b; }
+  .price { font-weight: 600; }
+  .pager { padding: 12px 24px; display: flex; gap: 8px; align-items: center; }
+  .pager button { background: #1e4456; }
+  .status { font-size: 13px; }
+  .wrap-all { overflow-x: auto; }
+  .tabs { display: flex; gap: 8px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
+  .tabs button { background: #eef3f6; color: #1e4456; }
+  .tabs button.active { background: #1e4456; color: #fff; }
+  .order-card { background: #fff; border: 1px solid #dde5ea; border-radius: 8px; padding: 14px 18px; margin: 12px 24px; }
+  .order-card .oc-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-weight: 700; }
+  .order-card .oc-line { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; color: #444; }
+  .order-card .oc-items { margin: 8px 0; border-top: 1px dashed #dde5ea; padding-top: 8px; font-size: 13px; }
+  .order-card .oc-total { font-weight: 700; font-size: 15px; margin-top: 6px; }
+  .order-card .oc-actions { margin-top: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .order-card .oc-actions .ok { background: #1c7a2d; }
+  .st-badge { font-weight: 700; font-size: 12px; padding: 3px 10px; border-radius: 4px; }
+  .st-ny { background: #fff3e0; color: #b26a00; }
+  .st-handled { background: #e3f6e5; color: #1c7a2d; }
+  #ordersView { display: none; }
+  .order-filters { display: flex; gap: 8px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
+  .order-filters button { background: #eef3f6; color: #1e4456; }
+  .order-filters button.active { background: #1e4456; color: #fff; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Vanessas Däck – Lagersaldo</h1>
+    <div class="sub" id="statusText">Laddar...</div>
+  </div>
+  <div style="display:flex;gap:10px;align-items:center">
+    <button id="syncBtn" onclick="triggerSync()">Uppdatera lager</button>
+  </div>
+</header>
+<div class="tabs">
+  <button id="tab-stock" class="active" onclick="showView('stock')">Lagersaldo</button>
+  <button id="tab-orders" onclick="showView('orders')">Beställningar</button>
+</div>
+<div id="stockView">
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Sök på märke, namn, artikelnummer eller ID..." oninput="onSearch()">
+  <label><input type="checkbox" id="stockOnly" onchange="onSearch()"> Endast artiklar i lager</label>
+  <span id="resultCount" class="status"></span>
+</div>
+<div class="wrap-all">
+<table>
+  <thead>
+    <tr>
+      <th>Art.nr</th><th>Typ</th><th>Märke</th><th>Modell</th><th class="wrap">Dimension</th><th>Pris</th><th>Internt lager</th><th>Externt lager</th><th>Leveranstid</th>
+    </tr>
+  </thead>
+  <tbody id="rows"></tbody>
+</table>
+</div>
+<div class="pager">
+  <button id="prevBtn" onclick="changePage(-1)">Föregående</button>
+  <span id="pageInfo" class="status"></span>
+  <button id="nextBtn" onclick="changePage(1)">Nästa</button>
+</div>
+</div>
+<div id="ordersView">
+  <div class="order-filters">
+    <button id="of-all" class="active" onclick="orderFilter('')">Alla</button>
+    <button id="of-ny" onclick="orderFilter('ny')">Nya</button>
+    <button id="of-handled" onclick="orderFilter('handled')">Behandlade</button>
+  </div>
+  <div style="padding:12px 24px" class="status">Laddar beställningar...</div>
+</div>
+<script>
+let page = 1;
+let orderStatusFilter = '';
+
+function showView(name) {
+  document.getElementById('stockView').style.display = name === 'stock' ? 'block' : 'none';
+  document.getElementById('ordersView').style.display = name === 'orders' ? 'block' : 'none';
+  document.getElementById('tab-stock').className = name === 'stock' ? 'active' : '';
+  document.getElementById('tab-orders').className = name === 'orders' ? 'active' : '';
+  if (name === 'orders') loadOrders();
+}
+
+function orderFilter(status) {
+  orderStatusFilter = status;
+  document.getElementById('of-all').className = status === '' ? 'active' : '';
+  document.getElementById('of-ny').className = status === 'ny' ? 'active' : '';
+  document.getElementById('of-handled').className = status === 'handled' ? 'active' : '';
+  loadOrders();
+}
+
+async function loadOrders() {
+  const box = document.getElementById('ordersView');
+  try {
+    const r = await fetch('/api/orders' + (orderStatusFilter ? '?status=' + orderStatusFilter : ''));
+    const d = await r.json();
+    if (!d.orders || !d.orders.length) {
+      box.innerHTML = '<div style="padding:24px" class="status">Inga beställningar.</div>';
+      return;
+    }
+    box.innerHTML = d.orders.map(o => {
+      const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} × ${esc(i.manufacturer || '')} ${esc(i.name)}</span><span>${(i.price * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
+      const customer = o.customer.name || (o.customer.firstname + ' ' + o.customer.lastname);
+      const statusBadge = o.status === 'handled'
+        ? '<span class="st-badge st-handled">Behandlad</span>'
+        : '<span class="st-badge st-ny">Ny</span>';
+      const action = o.status === 'handled'
+        ? `<button class="ok" onclick="setOrderStatus('${o.id}', 'ny')">Återställ till ny</button>`
+        : `<button class="ok" onclick="setOrderStatus('${o.id}', 'handled')">Markera som behandlad</button>`;
+      const customerInfo = o.userId ? `<div class="oc-line"><span class="l">Konto</span><span>Ja (användar-ID ${o.userId})</span></div>` : '';
+      return `<div class="order-card">
+        <div class="oc-head"><span>${esc(o.id)}</span><span>${new Date(o.created).toLocaleString('sv-SE')} ${statusBadge}</span></div>
+        <div class="oc-line"><span class="l">Kund</span><span>${esc(customer)} · ${esc(o.customer.email)}${o.customer.phone ? ' · ' + esc(o.customer.phone) : ''}</span></div>
+        <div class="oc-line"><span class="l">Adress</span><span>${esc(o.customer.address)}, ${esc(o.customer.zip)} ${esc(o.customer.city)}${o.customer.ssn ? ' · Pnr ' + esc(o.customer.ssn) : ''}</span></div>
+        ${o.customer.car ? `<div class="oc-line"><span class="l">Bil</span><span>${esc(o.customer.car)}</span></div>` : ''}
+        ${o.customer.note ? `<div class="oc-line"><span class="l">Meddelande</span><span>${esc(o.customer.note)}</span></div>` : ''}
+        ${customerInfo}
+        <div class="oc-line"><span class="l">Leverans</span><span>${esc(o.shipping.method)} · ${esc(o.payment.method)}</span></div>
+        <div class="oc-items">${items}</div>
+        <div class="oc-total">Totalt: ${o.total.toLocaleString('sv-SE')} kr</div>
+        <div class="oc-actions">${action}</div>
+      </div>`;
+    }).join('');
+  } catch (e) {
+    box.innerHTML = '<div style="padding:24px" class="status">Kunde inte hämta beställningar.</div>';
+  }
+}
+
+async function setOrderStatus(id, status) {
+  const r = await fetch('/api/orders/' + id, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status })
+  });
+  if (r.ok) loadOrders();
+}
+
+async function load() {
+  const q = document.getElementById('search').value.trim();
+  const stock = document.getElementById('stockOnly').checked ? '1' : '0';
+  const r = await fetch('/api/products?q=' + encodeURIComponent(q) + '&stock=' + stock + '&page=' + page);
+  const d = await r.json();
+  document.getElementById('resultCount').textContent = d.total + ' artiklar';
+  document.getElementById('pageInfo').textContent = 'Sida ' + d.page + ' av ' + d.pages;
+  document.getElementById('prevBtn').disabled = d.page <= 1;
+  document.getElementById('nextBtn').disabled = d.page >= d.pages;
+  const tbody = document.getElementById('rows');
+  tbody.innerHTML = '';
+  for (const p of d.products) {
+    const badge = p.stock > 0 ? '<span class="badge b-green">' + p.stock + ' i butik</span>'
+      : p.external_stock > 0 ? '<span class="badge b-orange">Extern: ' + p.external_stock + '</span>'
+      : '<span class="badge b-red">Ej i lager</span>';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td>' + (p.supplier_reference || p.id) + '</td>' +
+      '<td>' + (p.type === 'falgar' ? 'Fälg' : 'Däck') + '</td>' +
+      '<td>' + esc(p.manufacturer) + '</td>' +
+      '<td class="wrap">' + esc(p.name) + '</td>' +
+      '<td class="wrap">' + esc(p.info || '') + '</td>' +
+      '<td class="price">' + (p.price ? p.price.toLocaleString('sv-SE') + ' kr' : '') + '</td>' +
+      '<td>' + badge + '</td>' +
+      '<td>' + p.external_stock + '</td>' +
+      '<td>' + (p.external_delivery || '–') + '</td>';
+    tbody.appendChild(tr);
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+let debounce;
+function onSearch() { clearTimeout(debounce); debounce = setTimeout(() => { page = 1; load(); }, 250); }
+function changePage(delta) { page += delta; load(); }
+
+async function triggerSync() {
+  const btn = document.getElementById('syncBtn');
+  btn.disabled = true;
+  btn.textContent = 'Synkar...';
+  await fetch('/api/sync', { method: 'POST' });
+  const poll = setInterval(async () => {
+    const r = await fetch('/api/status');
+    const s = await r.json();
+    if (!s.syncing) {
+      clearInterval(poll);
+      btn.disabled = false;
+      btn.textContent = 'Uppdatera lager';
+      page = 1;
+      await load();
+    }
+  }, 3000);
+}
+
+async function refreshStatus() {
+  const r = await fetch('/api/status');
+  const s = await r.json();
+  const el = document.getElementById('statusText');
+  if (s.syncing) {
+    el.textContent = 'Synkroniserar pågår...';
+    setTimeout(refreshStatus, 3000);
+  } else {
+    el.textContent = 'Senast synkad: ' + (s.lastSync ? new Date(s.lastSync).toLocaleString('sv-SE') : 'aldrig') + ' · ' + s.productCount + ' produkter';
+  }
+}
+
+load();
+refreshStatus();
+</script>
+</body>
+</html>

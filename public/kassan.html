@@ -1,0 +1,356 @@
+﻿<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kassa – Vanessas Däck</title>
+<link rel="stylesheet" href="/public/styles.css">
+<link rel="icon" href="/public/logo.svg">
+<style>
+  .checkout-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; padding: 28px 0; }
+  .steps { display: flex; gap: 6px; margin-bottom: 24px; }
+  .steps .st { flex: 1; text-align: center; padding: 10px 6px; border-radius: 10px; background: #fff; border: 2px solid var(--border); font-weight: 700; font-size: 14px; color: var(--text-light); }
+  .steps .st.active { border-color: var(--primary); color: var(--primary); }
+  .steps .st.done { border-color: var(--green); color: var(--green); }
+  .form-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); }
+  .form-card h3 { margin-bottom: 16px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .form-field { display: flex; flex-direction: column; gap: 5px; }
+  .form-field.full { grid-column: 1 / -1; }
+  .form-field label { font-size: 13px; font-weight: 600; color: var(--text-light); }
+  .form-field input, .form-field select {
+    padding: 11px 13px; border: 1px solid var(--border); border-radius: 9px; font-size: 15px; outline: 0; background: #fff;
+  }
+  .form-field input:focus, .form-field select:focus { border-color: var(--primary); }
+  .form-field input.err { border-color: var(--red); }
+  .form-field .err-txt { color: var(--red); font-size: 12px; display: none; }
+  .radio-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .radio-card { flex: 1; min-width: 160px; border: 2px solid var(--border); border-radius: 10px; padding: 14px; cursor: pointer; font-weight: 600; font-size: 14px; background: #fff; }
+  .radio-card.sel { border-color: var(--primary); }
+  .radio-card .sub { font-weight: 400; color: var(--text-light); font-size: 13px; margin-top: 2px; }
+  .type-tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .type-tabs button { flex: 1; padding: 11px; border: 2px solid var(--border); background: #fff; border-radius: 10px; font-weight: 700; font-size: 14px; cursor: pointer; color: var(--text-light); }
+  .type-tabs button.active { border-color: var(--primary); color: var(--primary); }
+  .btn-row { display: flex; gap: 10px; margin-top: 18px; justify-content: space-between; }
+  .order-success { text-align: center; padding: 50px 24px; }
+  .order-success .icon { font-size: 56px; margin-bottom: 12px; }
+  .order-success h2 { margin-bottom: 8px; }
+  .order-success .order-nr { font-size: 20px; font-weight: 800; color: var(--primary); margin: 12px 0; }
+  .order-success .info { color: var(--text-light); margin-bottom: 20px; }
+  .order-card { border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; margin: 8px 0; background: #fafbfc; }
+  .order-card .oc-row { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; }
+  .order-card .oc-row .l { color: var(--text-light); }
+  @media (max-width: 800px) { .checkout-layout { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header id="site-header" class="site"></header>
+
+<div class="container">
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><a href="/varukorg">Varukorg</a><span class="sep">›</span><span>Kassa</span></div>
+
+  <div class="checkout-layout">
+    <div>
+      <div class="steps">
+        <div class="st" id="st1">1. Adress</div>
+        <div class="st" id="st2">2. Betalning</div>
+        <div class="st" id="st3">3. Klart</div>
+      </div>
+
+      <div class="form-card" id="step1">
+        <h3>Leveransalternativ</h3>
+        <div class="radio-row" style="margin-bottom:22px">
+          <div class="radio-card sel" id="ship-butik" onclick="selectShip('butik')">🏪 Hämta i butiken<div class="sub">Hos Vanessas Däck</div></div>
+          <div class="radio-card" id="ship-dhl" onclick="selectShip('dhl')">🚚 Skicka med DHL<div class="sub">3–5 arbetsdagar · 0 kr</div></div>
+        </div>
+
+        <h3>Adress</h3>
+        <div class="type-tabs">
+          <button id="type-privat" class="active" onclick="setType('privat')">PRIVATPERSON</button>
+          <button id="type-foretag" onclick="setType('foretag')">FÖRETAG</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-field">
+            <label id="lbl-ssn">Personnummer *</label>
+            <input type="text" id="f-ssn" placeholder="ÅÅMMDD-XXXX">
+            <div class="err-txt">Ange personnummer</div>
+          </div>
+          <div class="form-field" id="org-field" style="display:none">
+            <label>Organisationsnummer</label>
+            <input type="text" id="f-orgnr" placeholder="XXXXXX-XXXX">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Förnamn *</label>
+            <input type="text" id="f-first" placeholder="Anna">
+            <div class="err-txt">Ange förnamn</div>
+          </div>
+          <div class="form-field">
+            <label>Efternamn *</label>
+            <input type="text" id="f-last" placeholder="Andersson">
+            <div class="err-txt">Ange efternamn</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Adress *</label>
+            <input type="text" id="f-address" placeholder="Storgatan 1">
+            <div class="err-txt">Ange din adress</div>
+          </div>
+          <div class="form-field">
+            <label>Postnummer *</label>
+            <input type="text" id="f-zip" placeholder="123 45">
+            <div class="err-txt">Ange postnummer</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Postort *</label>
+            <input type="text" id="f-city" placeholder="Stockholm">
+            <div class="err-txt">Ange postort</div>
+          </div>
+          <div class="form-field">
+            <label>Telefon</label>
+            <input type="tel" id="f-phone" placeholder="08-123 456">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Mobiltelefon *</label>
+            <input type="tel" id="f-mobile" placeholder="070-123 45 67">
+            <div class="err-txt">Ange mobilnummer</div>
+          </div>
+          <div class="form-field">
+            <label>E-post *</label>
+            <input type="email" id="f-email" placeholder="anna@exempel.se">
+            <div class="err-txt">Ange en giltig e-postadress</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Bilmärke & modell</label>
+            <input type="text" id="f-car" placeholder="Volvo V70">
+          </div>
+          <div class="form-field">
+            <label>Meddelande</label>
+            <input type="text" id="f-note" placeholder="T.ex. montering önskas">
+          </div>
+        </div>
+        <div class="btn-row">
+          <a class="btn dark" href="/varukorg">← Tillbaka</a>
+          <button class="btn primary" onclick="goStep2()">Gå vidare till betalning »</button>
+        </div>
+      </div>
+
+      <div class="form-card" id="step2" style="display:none">
+        <h3>Betalning – Svea</h3>
+        <p style="color:var(--text-light);font-size:13px;margin-bottom:14px">Betalningen hanteras säkert av Svea Ekonomi.</p>
+        <div class="radio-row" style="margin-bottom:20px">
+          <div class="radio-card sel" id="pay-faktura" onclick="selectPay('faktura')">🧾 Svea Faktura<div class="sub">Betala inom 14 dagar</div></div>
+          <div class="radio-card" id="pay-kort" onclick="selectPay('kort')">💳 Svea Kortbetalning<div class="sub">Visa / Mastercard</div></div>
+          <div class="radio-card" id="pay-del" onclick="selectPay('delbetalning')">🗓️ Svea Delbetalning<div class="sub">Dela upp betalningen</div></div>
+        </div>
+        <div class="order-card">
+          <div class="oc-row"><span class="l">Leverans</span><span id="sum-ship">Hämtning i butik</span></div>
+          <div class="oc-row"><span class="l">Kundtyp</span><span id="sum-type">Privatperson</span></div>
+          <div class="oc-row"><span class="l">Kund</span><span id="sum-name">—</span></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn dark" onclick="backTo1()">← Tillbaka</button>
+          <button class="btn primary" onclick="placeOrder()">Lägg beställning ✓</button>
+        </div>
+      </div>
+
+      <div class="form-card" id="step3" style="display:none">
+        <div class="order-success" id="successBox"></div>
+      </div>
+    </div>
+
+    <aside class="cart-summary" style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);position:sticky;top:90px">
+      <h3>Din beställning</h3>
+      <div id="checkoutItems"></div>
+      <div class="sum-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--text-light)"><span>Frakt</span><span>0 kr</span></div>
+      <div class="sum-row" style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:8px;padding-top:12px;font-size:18px;font-weight:800"><span>Att betala</span><span id="checkoutTotal"></span></div>
+      <div style="margin-top:10px;font-size:13px;color:var(--green);font-weight:600;text-align:center">🚚 Alltid fraktfritt</div>
+    </aside>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="container">
+    <div class="cols">
+      <div><h4>Vanessas Däck</h4><a href="/">Hem</a><a href="/villkor">Villkor</a></div>
+      <div><h4>Handla</h4><a href="/dack">Däck</a><a href="/falgar">Fälgar</a></div>
+    </div>
+    <div class="bottom"><span>© 2026 Vanessas Däck.</span><span>Alltid fraktfritt!</span></div>
+  </div>
+</footer>
+
+<script src="/public/app.js"></script>
+<script>
+injectHeader('/kassan');
+
+let shipMethod = 'butik';
+let payMethod = 'faktura';
+let custType = 'privat';
+function renderCheckout() {
+  const cart = APP.getCart();
+  document.getElementById('checkoutItems').innerHTML = cart.length
+    ? cart.map(i => `<div class="order-card"><div class="oc-row"><span class="l">${i.qty} × ${APP.esc(i.manufacturer || '')} ${APP.esc(i.name)}</span><span>${APP.money((i.price || 0) * i.qty)}</span></div><div class="oc-row" style="font-size:12px"><span class="l">${APP.esc(i.info || '')}</span></div></div>`).join('')
+    : '<p style="color:var(--text-light);font-size:14px">Varukorgen är tom.</p>';
+  document.getElementById('checkoutTotal').textContent = APP.money(APP.cartTotal());
+}
+
+function setStep(n) {
+  document.getElementById('st1').className = 'st ' + (n >= 1 ? 'done' : '') + (n === 1 ? ' active' : '');
+  document.getElementById('st2').className = 'st ' + (n >= 2 ? 'done' : '') + (n === 2 ? ' active' : '');
+  document.getElementById('st3').className = 'st ' + (n === 3 ? 'active' : '');
+  document.getElementById('step1').style.display = n === 1 ? 'block' : 'none';
+  document.getElementById('step2').style.display = n === 2 ? 'block' : 'none';
+  document.getElementById('step3').style.display = n === 3 ? 'block' : 'none';
+}
+
+function setType(t) {
+  custType = t;
+  document.getElementById('type-privat').className = t === 'privat' ? 'active' : '';
+  document.getElementById('type-foretag').className = t === 'foretag' ? 'active' : '';
+  document.getElementById('org-field').style.display = t === 'foretag' ? 'flex' : 'none';
+  document.getElementById('lbl-ssn').textContent = t === 'foretag' ? 'Kontaktpersonens personnummer *' : 'Personnummer *';
+}
+
+function selectShip(m) {
+  shipMethod = m;
+  document.getElementById('ship-butik').className = 'radio-card' + (m === 'butik' ? ' sel' : '');
+  document.getElementById('ship-dhl').className = 'radio-card' + (m === 'dhl' ? ' sel' : '');
+}
+
+function selectPay(m) {
+  payMethod = m;
+  document.getElementById('pay-faktura').className = 'radio-card' + (m === 'faktura' ? ' sel' : '');
+  document.getElementById('pay-kort').className = 'radio-card' + (m === 'kort' ? ' sel' : '');
+  document.getElementById('pay-del').className = 'radio-card' + (m === 'delbetalning' ? ' sel' : '');
+}
+
+function validate1() {
+  let ok = true;
+  const fields = [
+    ['f-ssn', 'Ange personnummer'],
+    ['f-first', 'Ange förnamn'],
+    ['f-last', 'Ange efternamn'],
+    ['f-address', 'Ange din adress'],
+    ['f-zip', 'Ange postnummer'],
+    ['f-city', 'Ange postort'],
+    ['f-mobile', 'Ange mobilnummer'],
+    ['f-email', 'Ange en giltig e-postadress']
+  ];
+  for (const [id, msg] of fields) {
+    const el = document.getElementById(id);
+    const valid = id === 'f-email' ? /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(el.value.trim()) : el.value.trim().length > 1;
+    el.classList.toggle('err', !valid);
+    el.parentElement.querySelector('.err-txt').style.display = valid ? 'none' : 'block';
+    if (!valid) ok = false;
+  }
+  return ok;
+}
+
+function goStep2() {
+  if (!validate1()) return;
+  document.getElementById('sum-ship').textContent = shipMethod === 'dhl' ? 'Skicka med DHL' : 'Hämtning i butik';
+  document.getElementById('sum-type').textContent = custType === 'foretag' ? 'Företag' : 'Privatperson';
+  document.getElementById('sum-name').textContent =
+    document.getElementById('f-first').value.trim() + ' ' + document.getElementById('f-last').value.trim();
+  setStep(2);
+}
+
+function backTo1() { setStep(1); }
+
+async function placeOrder() {
+  const cart = APP.getCart();
+  if (!cart.length) {
+    alert('Varukorgen är tom.');
+    return;
+  }
+  const order = {
+    customer: {
+      type: custType === 'foretag' ? 'Företag' : 'Privatperson',
+      ssn: document.getElementById('f-ssn').value.trim(),
+      orgnr: document.getElementById('f-orgnr').value.trim(),
+      firstname: document.getElementById('f-first').value.trim(),
+      lastname: document.getElementById('f-last').value.trim(),
+      address: document.getElementById('f-address').value.trim(),
+      zip: document.getElementById('f-zip').value.trim(),
+      city: document.getElementById('f-city').value.trim(),
+      phone: document.getElementById('f-phone').value.trim(),
+      mobile: document.getElementById('f-mobile').value.trim(),
+      email: document.getElementById('f-email').value.trim(),
+      car: document.getElementById('f-car').value.trim(),
+      note: document.getElementById('f-note').value.trim()
+    },
+    shipping: { method: shipMethod === 'dhl' ? 'Skicka med DHL' : 'Hämta i butiken' },
+    payment: { method: payMethod === 'faktura' ? 'Svea Faktura' : payMethod === 'delbetalning' ? 'Svea Delbetalning' : 'Svea Kortbetalning' },
+    items: cart.map(i => ({
+      productId: i.id,
+      manufacturer: i.manufacturer,
+      name: i.name,
+      info: i.info,
+      price: i.price,
+      qty: i.qty
+    })),
+    total: APP.cartTotal()
+  };
+
+  const btn = event.target;
+  btn.disabled = true;
+  btn.textContent = 'Skickar...';
+  try {
+    const res = await fetch(APP.api + '/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(order)
+    });
+    const d = await res.json();
+    if (!res.ok) throw new Error(d.error || 'Något gick fel');
+    APP.clearCart();
+    document.getElementById('successBox').innerHTML = `
+      <div class="icon">🎉</div>
+      <h2>Tack för din beställning!</h2>
+      <div class="order-nr">Ordernummer: ${APP.esc(d.order.id)}</div>
+      <p class="info">En bekräftelse har skickats till ${APP.esc(d.order.customer.email)}.<br>Vi kontaktar dig inom kort för att bekräfta leverans.</p>
+      <div class="order-card">
+        <div class="oc-row"><span class="l">Beställt</span><span>${new Date(d.order.created).toLocaleString('sv-SE')}</span></div>
+        <div class="oc-row"><span class="l">Leverans</span><span>${APP.esc(d.order.shipping.method)}</span></div>
+        <div class="oc-row"><span class="l">Betalning</span><span>${APP.esc(d.order.payment.method)}</span></div>
+        <div class="oc-row"><span class="l">Totalt</span><span>${APP.money(d.order.total)}</span></div>
+      </div>
+      <a class="btn dark" href="/">Tillbaka till startsidan</a>`;
+    setStep(3);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Lägg beställning ✓';
+    alert(e.message);
+  }
+}
+
+renderCheckout();
+setStep(1);
+
+async function prefillUser() {
+  try {
+    const r = await fetch('/api/me');
+    if (!r.ok) return;
+    const d = await r.json();
+    const parts = d.user.name.trim().split(/\s+/);
+    const first = parts.shift() || '';
+    const last = parts.join(' ') || '';
+    if (first) document.getElementById('f-first').value = first;
+    if (last) document.getElementById('f-last').value = last;
+    if (d.user.email) document.getElementById('f-email').value = d.user.email;
+  } catch (e) {}
+}
+prefillUser();
+</script>
+</body>
+</html>

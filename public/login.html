@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logga in – Vanessas Däck</title>
+<link rel="stylesheet" href="/public/styles.css">
+<link rel="icon" href="/public/logo.svg">
+</head>
+<body class="page account-page">
+<header id="site-header"></header>
+<main class="container narrow">
+  <h1>Logga in</h1>
+  <p class="lead">Logga in för att se dina beställningar och komma snabbare i kassan.</p>
+  <div class="err-msg" id="err" style="display:none"></div>
+  <form id="loginForm" onsubmit="return false;">
+    <label>E-post
+      <input type="email" id="email" required autocomplete="email" placeholder="din@epost.se">
+    </label>
+    <label>Lösenord
+      <input type="password" id="password" required autocomplete="current-password" placeholder="Ditt lösenord">
+    </label>
+    <button type="submit" class="btn" id="loginBtn" onclick="doLogin()">Logga in</button>
+  </form>
+  <p class="muted" style="margin-top:16px">Har du inget konto? <a href="/skapa-konto">Skapa konto</a></p>
+</main>
+<footer id="site-footer"></footer>
+<script src="/public/app.js"></script>
+<script>
+const next = new URLSearchParams(location.search).get('next') || '/mina-sidor';
+
+async function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const err = document.getElementById('err');
+  const btn = document.getElementById('loginBtn');
+  if (!email || !password) {
+    err.textContent = 'Fyll i e-post och lösenord.';
+    err.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Loggar in...';
+  try {
+    const r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const d = await r.json();
+    if (d.success) {
+      location.href = next;
+    } else {
+      err.textContent = d.error || 'Inloggningen misslyckades.';
+      err.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Logga in';
+    }
+  } catch (e) {
+    err.textContent = 'Kunde inte nå servern.';
+    err.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Logga in';
+  }
+}
+
+injectHeader();
+APP.initAccount();
+</script>
+</body>
+</html>

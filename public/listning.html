@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title id="pageTitle">Vanessas Däck</title>
+<meta name="description" content="Köp däck och fälgar online – stort sortiment, alltid fraktfritt och till bra priser.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="/public/styles.css">
+</head>
+<body>
+
+<header id="site-header" class="site"></header>
+
+<div class="container">
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><span id="crumb">Däck</span></div>
+  <div class="layout">
+    <aside class="sidebar">
+      <h3>Filtrera</h3>
+      <div class="group">
+        <label><input type="checkbox" id="f-stock"> Endast i lager <span class="count" id="f-stock-count"></span></label>
+      </div>
+      <div class="group" id="group-season" style="display:none">
+        <label>Säsong</label>
+        <select id="f-season"><option value="">Alla säsonger</option></select>
+      </div>
+      <div class="group">
+        <label>Märke</label>
+        <select id="f-mfg"><option value="">Alla märken</option></select>
+      </div>
+      <div class="group">
+        <label>Tum (fälgdiameter)</label>
+        <select id="f-inch"><option value="">Alla storlekar</option></select>
+      </div>
+      <div class="group" id="group-width" style="display:none">
+        <label>Bredd (mm)</label>
+        <select id="f-width"><option value="">Alla bredder</option></select>
+      </div>
+      <div class="group" id="group-ratio" style="display:none">
+        <label>Profil (%)</label>
+        <select id="f-ratio"><option value="">Alla profiler</option></select>
+      </div>
+      <div class="group" id="group-bolt" style="display:none">
+        <label>Bultcirkel</label>
+        <select id="f-bolt"><option value="">Alla bultcirklar</option></select>
+      </div>
+      <div class="group" id="group-et" style="display:none">
+        <label>ET (inpressning)</label>
+        <select id="f-et"><option value="">Alla ET</option></select>
+      </div>
+      <button class="btn dark" style="width:100%" onclick="resetFilters()">Rensa filter</button>
+    </aside>
+
+    <div>
+      <div class="results-top">
+        <span class="total" id="totalText">Laddar...</span>
+        <select id="sort" onchange="loadProducts(1)">
+          <option value="">Sortering: Relevans</option>
+          <option value="price_asc">Pris: lägst först</option>
+          <option value="price_desc">Pris: högst först</option>
+          <option value="name">Märke & modell</option>
+        </select>
+      </div>
+      <div class="grid" id="results"><div class="spinner"></div></div>
+      <div class="empty" id="emptyMsg" style="display:none">
+        <div class="icon">🔍</div>
+        <div>Inga produkter matchade dina val.</div>
+      </div>
+      <div class="pager" id="pager"></div>
+    </div>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h4>Vanessas Däck</h4>
+        <a href="/">Hem</a>
+        <a href="/villkor">Villkor</a>
+      </div>
+      <div>
+        <h4>Handla</h4>
+        <a href="/dack">Däck</a>
+        <a href="/falgar">Fälgar</a>
+      </div>
+    </div>
+    <div class="bottom">
+      <span>© 2026 Vanessas Däck. Alla rättigheter förbehållna.</span>
+      <span>Alltid fraktfritt!</span>
+    </div>
+  </div>
+</footer>
+
+<script src="/public/app.js"></script>
+<script>
+const params = new URLSearchParams(location.search);
+const TYPE = location.pathname.startsWith('/falgar') ? 'falgar' : (location.pathname === '/sok' ? '' : (params.get('type') || 'dack'));
+const IS_SEARCH = location.pathname === '/sok';
+const TITLE = TYPE === 'falgar' ? 'Fälgar' : 'Däck';
+
+document.title = TITLE + ' – Vanessas Däck';
+document.getElementById('crumb').textContent = params.get('q') ? 'Sökresultat för "' + params.get('q') + '"' : TITLE;
+injectHeader('/' + (TYPE === 'falgar' ? 'falgar' : 'dack'));
+
+const state = {
+  q: params.get('q') || '',
+  type: TYPE,
+  page: 1
+};
+
+async function loadFilterValues() {
+  const d = await fetch(APP.api + '/filter-values?type=' + state.type).then(r => r.json());
+
+  const fill = (id, items, label) => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = '<option value="">' + label + '</option>' + items.map(i => `<option value="${APP.esc(i.value)}">${APP.esc(i.label || i.value)} (${i.count})</option>`).join('');
+  };
+
+  fill('f-mfg', d.manufacturers, 'Alla märken');
+  fill('f-inch', d.inches, 'Alla storlekar');
+
+  const isDack = state.type === 'dack';
+  document.getElementById('group-season').style.display = isDack ? 'block' : 'none';
+  document.getElementById('group-width').style.display = isDack ? 'block' : 'none';
+  document.getElementById('group-ratio').style.display = isDack ? 'block' : 'none';
+  document.getElementById('group-bolt').style.display = isDack ? 'none' : 'block';
+  document.getElementById('group-et').style.display = isDack ? 'none' : 'block';
+
+  if (isDack) {
+    fill('f-season', d.seasons, 'Alla säsonger');
+    fill('f-width', d.widths, 'Alla bredder');
+    fill('f-ratio', d.ratios, 'Alla profiler');
+  } else {
+    fill('f-bolt', d.boltCircles, 'Alla bultcirklar');
+    fill('f-et', d.ets, 'Alla ET');
+  }
+
+  const urlParams = new URLSearchParams(location.search);
+  const prefill = {
+    marke: 'f-mfg', inch: 'f-inch', season: 'f-season', width: 'f-width',
+    ratio: 'f-ratio', bolt_circle: 'f-bolt', et: 'f-et', stock: 'f-stock'
+  };
+  for (const [param, id] of Object.entries(prefill)) {
+    const v = urlParams.get(param);
+    if (v !== null && v !== '') {
+      if (param === 'stock') document.getElementById(id).checked = v === '1';
+      else document.getElementById(id).value = v;
+    }
+  }
+}
+
+async function loadProducts(page) {
+  state.page = page;
+  const q = new URLSearchParams({
+    q: state.q,
+    type: state.type,
+    marke: document.getElementById('f-mfg').value,
+    inch: document.getElementById('f-inch').value,
+    season: document.getElementById('f-season').value,
+    width: document.getElementById('f-width').value,
+    ratio: document.getElementById('f-ratio').value,
+    bolt_circle: document.getElementById('f-bolt').value,
+    et: document.getElementById('f-et').value,
+    stock: document.getElementById('f-stock').checked ? '1' : '0',
+    sort: document.getElementById('sort').value,
+    page
+  });
+  const res = await fetch(APP.api + '/products?' + q.toString());
+  const d = await res.json();
+
+  document.getElementById('totalText').textContent = d.total.toLocaleString('sv-SE') + ' produkter';
+  document.getElementById('emptyMsg').style.display = d.total ? 'none' : 'block';
+  document.getElementById('results').innerHTML = d.products.map(p => APP.productCard(p)).join('');
+
+  const pager = document.getElementById('pager');
+  if (d.pages <= 1) {
+    pager.innerHTML = '';
+    return;
+  }
+  let html = '<button onclick="loadProducts(1)" ' + (d.page === 1 ? 'disabled' : '') + '>«</button>';
+  const start = Math.max(1, d.page - 2);
+  const end = Math.min(d.pages, d.page + 2);
+  for (let i = start; i <= end; i++) {
+    html += `<button onclick="loadProducts(${i})" class="${i === d.page ? 'active' : ''}">${i}</button>`;
+  }
+  html += '<button onclick="loadProducts(' + d.pages + ')" ' + (d.page === d.pages ? 'disabled' : '') + '>»</button>';
+  pager.innerHTML = html;
+}
+
+function resetFilters() {
+  document.getElementById('f-stock').checked = false;
+  document.getElementById('f-mfg').value = '';
+  document.getElementById('f-inch').value = '';
+  document.getElementById('f-season').value = '';
+  document.getElementById('f-width').value = '';
+  document.getElementById('f-ratio').value = '';
+  document.getElementById('f-bolt').value = '';
+  document.getElementById('f-et').value = '';
+  document.getElementById('sort').value = '';
+  loadProducts(1);
+}
+
+document.getElementById('f-stock').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-mfg').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-inch').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-season').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-width').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-ratio').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-bolt').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-et').addEventListener('change', () => loadProducts(1));
+
+loadFilterValues();
+loadProducts(1);
+</script>
+</body>
+</html>

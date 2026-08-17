@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vanessas Däck – Bildgalleri</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #1e4456; }
+  header { background: #1e4456; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  header h1 { font-size: 20px; }
+  header a { color: #f6921e; text-decoration: none; font-size: 14px; }
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
+  input[type=text] { padding: 8px 12px; border: 1px solid #c5d2da; border-radius: 6px; font-size: 14px; width: 320px; max-width: 100%; }
+  label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; padding: 18px 24px; }
+  .card { background: #fff; border: 1px solid #e0e7ec; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
+  .card .imgwrap { background: #eef3f6; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: zoom-in; }
+  .card .imgwrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+  .card .imgwrap img.extra { display: none; }
+  .card .imgwrap:hover img.extra { display: block; }
+  .card .imgwrap:hover img.main { display: none; }
+  #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.85); z-index: 50; align-items: center; justify-content: center; cursor: zoom-out; }
+  #lightbox img { max-width: 92vw; max-height: 92vh; border-radius: 6px; }
+  .card .meta { padding: 10px 12px; font-size: 13px; flex: 1; }
+  .card .m { font-weight: 600; }
+  .card .n { color: #4a6472; }
+  .card .d { color: #8aa0ac; font-size: 12px; margin-top: 2px; }
+  .card .price { font-weight: 600; margin-top: 6px; }
+  .badge { display: inline-block; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; margin-top: 6px; }
+  .b-green { background: #e3f6e5; color: #1c7a2d; }
+  .b-orange { background: #fff3e0; color: #b26a00; }
+  .b-red { background: #fde8e8; color: #c0392b; }
+  .status { font-size: 13px; }
+  .empty { padding: 60px 24px; text-align: center; color: #8aa0ac; }
+  .count { font-size: 13px; opacity: .8; }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Vanessas Däck – Bildgalleri</h1>
+    <div class="count" id="count"></div>
+  </div>
+  <a href="/">← Till lagersaldo</a>
+</header>
+<div class="toolbar">
+  <input type="text" id="search" placeholder="Sök på märke, modell eller dimension..." oninput="onSearch()">
+  <label><input type="checkbox" id="stockOnly" onchange="onSearch()"> Endast i lager</label>
+  <label><input type="radio" name="type" value="" checked onchange="onSearch()"> Alla</label>
+  <label><input type="radio" name="type" value="dack" onchange="onSearch()"> Däck</label>
+  <label><input type="radio" name="type" value="falgar" onchange="onSearch()"> Fälgar</label>
+</div>
+<div class="grid" id="grid"></div>
+<div class="empty" id="empty" style="display:none">Inga bilder matchade sökningen.</div>
+<div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" src="" alt=""></div>
+<script>
+async function load() {
+  const q = document.getElementById('search').value.trim();
+  const type = document.querySelector('input[name=type]:checked').value;
+  const stock = document.getElementById('stockOnly').checked ? '1' : '0';
+  const r = await fetch('/api/gallery?q=' + encodeURIComponent(q) + '&type=' + type + '&stock=' + stock);
+  const d = await r.json();
+  document.getElementById('count').textContent = d.total + ' bilder';
+  const grid = document.getElementById('grid');
+  grid.innerHTML = '';
+  document.getElementById('empty').style.display = d.total ? 'none' : 'block';
+  for (const p of d.images) {
+    const badge = p.stock > 0 ? '<span class="badge b-green">' + p.stock + ' i butik</span>'
+      : p.external_stock > 0 ? '<span class="badge b-orange">Extern: ' + p.external_stock + '</span>'
+      : '<span class="badge b-red">Ej i lager</span>';
+    const thumbs = p.images.map((im, i) =>
+      '<img loading="lazy" src="' + im + '" alt="' + esc(p.manufacturer + ' ' + p.name) + ' ' + (i + 1) + '" class="' + (i === 0 ? 'main' : 'extra') + '">'
+    ).join('');
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="imgwrap" onclick="openLightbox(\'' + p.images[0] + '\')">' + thumbs + '</div>' +
+      '<div class="meta">' +
+      '<div class="m">' + esc(p.manufacturer) + '</div>' +
+      '<div class="n">' + esc(p.name) + '</div>' +
+      '<div class="d">' + esc(p.info || '') + '</div>' +
+      (p.price ? '<div class="price">' + p.price.toLocaleString('sv-SE') + ' kr</div>' : '') +
+      badge +
+      '</div>';
+    grid.appendChild(card);
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+function openLightbox(src) {
+  document.getElementById('lightboxImg').src = src;
+  document.getElementById('lightbox').style.display = 'flex';
+}
+
+let debounce;
+function onSearch() { clearTimeout(debounce); debounce = setTimeout(load, 250); }
+
+load();
+</script>
+</body>
+</html>

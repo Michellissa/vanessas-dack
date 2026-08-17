@@ -1,0 +1,107 @@
+﻿<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Varukorg – Vanessas Däck</title>
+<link rel="stylesheet" href="/public/styles.css">
+<link rel="icon" href="/public/logo.svg">
+<style>
+  .cart-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; padding: 28px 0; }
+  .cart-items { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
+  .ci { display: grid; grid-template-columns: 90px 1fr auto auto auto; gap: 16px; align-items: center; padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .ci:last-child { border-bottom: 0; }
+  .ci .imgwrap { width: 90px; height: 90px; background: #fff; border: 1px solid var(--border); border-radius: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .ci .imgwrap img { max-width: 100%; max-height: 100%; object-fit: contain; }
+  .ci .name { font-weight: 700; }
+  .ci .mfg { color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+  .ci .dims { color: var(--text-light); font-size: 13px; }
+  .ci .qty-wrap { display: flex; align-items: center; gap: 8px; }
+  .ci .qty-wrap button { width: 30px; height: 30px; border: 1px solid var(--border); background: #fff; border-radius: 7px; font-size: 16px; font-weight: 700; cursor: pointer; color: var(--text); }
+  .ci .qty-wrap button:hover { border-color: var(--primary); color: var(--primary); }
+  .ci .qty-wrap span { min-width: 28px; text-align: center; font-weight: 700; }
+  .ci .line-price { font-weight: 800; min-width: 90px; text-align: right; }
+  .ci .remove { background: none; border: 0; color: var(--red); cursor: pointer; font-size: 13px; padding: 4px; }
+  .ci .remove:hover { text-decoration: underline; }
+  .cart-summary { background: #fff; border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); position: sticky; top: 90px; }
+  .cart-summary h3 { margin-bottom: 14px; }
+  .sum-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 14px; color: var(--text-light); }
+  .sum-row.total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 12px; font-size: 18px; font-weight: 800; color: var(--text); }
+  .cart-summary .btn { width: 100%; margin-top: 14px; text-align: center; }
+  .cart-summary .free { margin-top: 10px; font-size: 13px; color: var(--green); font-weight: 600; text-align: center; }
+  @media (max-width: 800px) {
+    .cart-layout { grid-template-columns: 1fr; }
+    .ci { grid-template-columns: 70px 1fr; grid-auto-rows: auto; }
+    .ci .imgwrap { width: 70px; height: 70px; }
+    .ci .qty-wrap, .ci .line-price, .ci .remove { grid-column: 2; }
+  }
+</style>
+</head>
+<body>
+
+<header id="site-header" class="site"></header>
+
+<div class="container">
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><span>Varukorg</span></div>
+  <div class="cart-layout">
+    <div class="cart-items" id="items"><div class="spinner"></div></div>
+    <aside class="cart-summary" id="summary"></aside>
+  </div>
+</div>
+
+<footer class="site">
+  <div class="container">
+    <div class="cols">
+      <div><h4>Vanessas Däck</h4><a href="/">Hem</a><a href="/villkor">Villkor</a></div>
+      <div><h4>Handla</h4><a href="/dack">Däck</a><a href="/falgar">Fälgar</a></div>
+    </div>
+    <div class="bottom"><span>© 2026 Vanessas Däck.</span><span>Alltid fraktfritt!</span></div>
+  </div>
+</footer>
+
+<script src="/public/app.js"></script>
+<script>
+injectHeader('/varukorg');
+
+function render() {
+  const cart = APP.getCart();
+  const items = document.getElementById('items');
+  const summary = document.getElementById('summary');
+
+  if (!cart.length) {
+    items.innerHTML = '<div class="empty" style="padding:60px 20px"><div class="icon">🛒</div><h3>Din varukorg är tom</h3><p style="margin-top:8px">Hittade du inget? Utforska vårt sortiment.</p><div style="margin-top:18px"><a class="btn dark" href="/dack">Till däck</a> <a class="btn dark" href="/falgar">Till fälgar</a></div></div>';
+    summary.innerHTML = '';
+    return;
+  }
+
+  items.innerHTML = cart.map(i => `
+    <div class="ci">
+      <a class="imgwrap" href="/produkt?id=${i.id}"><img loading="lazy" src="${i.image}" alt="${APP.esc(i.name)}" onerror="this.src='/public/no-image.svg'"></a>
+      <div>
+        <div class="mfg">${APP.esc(i.manufacturer || '')}</div>
+        <a class="name" href="/produkt?id=${i.id}">${APP.esc(i.name)}</a>
+        <div class="dims">${APP.esc(i.info || '')}</div>
+      </div>
+      <div class="qty-wrap">
+        <button onclick="APP.updateCartQty(${i.id}, ${i.qty - 1}); render();">−</button>
+        <span>${i.qty}</span>
+        <button onclick="APP.updateCartQty(${i.id}, ${i.qty + 1}); render();">+</button>
+      </div>
+      <div class="line-price">${APP.money((i.price || 0) * i.qty)}</div>
+      <button class="remove" onclick="APP.removeFromCart(${i.id}); render();">Ta bort</button>
+    </div>`).join('');
+
+  const total = APP.cartTotal();
+  summary.innerHTML = `
+    <h3>Sammanfattning</h3>
+    <div class="sum-row"><span>Antal artiklar</span><span>${APP.cartCount()}</span></div>
+    <div class="sum-row"><span>Frakt</span><span>0 kr</span></div>
+    <div class="sum-row total"><span>Att betala</span><span>${APP.money(total)}</span></div>
+    <a class="btn primary" href="/kassan">Gå till kassan</a>
+    <div class="free">🚚 Alltid fraktfritt</div>`;
+}
+
+render();
+</script>
+</body>
+</html>
