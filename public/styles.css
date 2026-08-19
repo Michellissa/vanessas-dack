@@ -242,7 +242,7 @@ header.site.menu-open .mobile-menu { display: block; }
   content: '';
   position: absolute;
   inset: 0;
-  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, .025) 0 1px, transparent 1px 120px);
+  background: radial-gradient(700px 320px at 50% 130%, rgba(229, 51, 31, .12), transparent 60%);
   pointer-events: none;
 }
 .hero .inner { display: grid; grid-template-columns: 1.08fr .92fr; gap: 56px; align-items: center; position: relative; }
