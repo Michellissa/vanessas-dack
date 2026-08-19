@@ -88,12 +88,12 @@ header.site.scrolled .logo img { height: 32px; }
   font-size: 14px;
   color: rgba(255, 255, 255, .74);
   border-radius: 9px;
-  transition: background .15s, color .15s;
+  transition: color .15s;
   white-space: nowrap;
 }
-.nav a:hover { background: rgba(255, 255, 255, .08); color: #fff; }
-.nav a.active { color: #fff; background: rgba(255, 255, 255, .1); }
-.nav a.active::after {
+.nav a:hover { color: #fff; }
+.nav a.active { color: #fff; }
+.nav a::after {
   content: '';
   position: absolute;
   left: 14px;
@@ -102,7 +102,11 @@ header.site.scrolled .logo img { height: 32px; }
   height: 2px;
   border-radius: 2px;
   background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .22s ease;
 }
+.nav a:hover::after, .nav a.active::after { transform: scaleX(1); }
 
 .header-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: none; }
 
@@ -130,9 +134,9 @@ header.site.scrolled .logo img { height: 32px; }
   color: rgba(255, 255, 255, .78);
   border-radius: 9px;
   white-space: nowrap;
-  transition: background .15s, color .15s;
+  transition: color .15s;
 }
-.account-link:hover { color: #fff; background: rgba(255, 255, 255, .1); }
+.account-link:hover { color: #fff; }
 
 .cart-link {
   position: relative;
