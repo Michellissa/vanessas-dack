@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kassa – Vanessas Däck</title>
-<link rel="stylesheet" href="/public/styles.css?v=6">
+<link rel="stylesheet" href="/public/styles.css?v=7">
 <link rel="icon" href="/public/logo.svg">
 <style>
   .checkout-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; padding: 28px 0; }
@@ -174,6 +174,7 @@
       <h3>Din beställning</h3>
       <div id="checkoutItems"></div>
       <div class="sum-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--text-light)"><span>Frakt</span><span>0 kr</span></div>
+      <div class="sum-row" id="discountRow" style="display:none;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--green);font-weight:600"><span>Rabatt</span><span id="discountTotal"></span></div>
       <div class="sum-row" style="display:flex;justify-content:space-between;border-top:1px solid var(--border);margin-top:8px;padding-top:12px;font-size:18px;font-weight:800"><span>Att betala</span><span id="checkoutTotal"></span></div>
       <div style="margin-top:10px;font-size:13px;color:var(--green);font-weight:600;text-align:center;display:flex;align-items:center;justify-content:center;gap:6px"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"></path><path d="M16 8h4l3 3v5h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>Alltid fraktfritt</div>
     </aside>
@@ -182,19 +183,34 @@
 
 <footer id="site-footer"></footer>
 
-<script src="/public/app.js?v=6"></script>
+<script src="/public/app.js?v=7"></script>
 <script>
 injectHeader('/kassan');
 
 let shipMethod = 'butik';
 let payMethod = 'faktura';
 let custType = 'privat';
+let userDiscount = null;
+
+function discounted(items) {
+  return items.map(i => {
+    const pct = userDiscount && userDiscount[i.manufacturer] ? Number(userDiscount[i.manufacturer]) : 0;
+    return { ...i, pct, price: pct > 0 ? Math.round((i.price * (100 - pct)) / 100) : i.price };
+  });
+}
+
 function renderCheckout() {
   const cart = APP.getCart();
-  document.getElementById('checkoutItems').innerHTML = cart.length
-    ? cart.map(i => `<div class="order-card"><div class="oc-row"><span class="l">${i.qty} × ${APP.esc(i.manufacturer || '')} ${APP.esc(i.name)}</span><span>${APP.money((i.price || 0) * i.qty)}</span></div><div class="oc-row" style="font-size:12px"><span class="l">${APP.esc(i.info || '')}</span></div></div>`).join('')
+  const priced = discounted(cart);
+  let discount = 0;
+  for (let i = 0; i < cart.length; i++) discount += (cart[i].price - priced[i].price) * (cart[i].qty || 1);
+  document.getElementById('checkoutItems').innerHTML = priced.length
+    ? priced.map(i => `<div class="order-card"><div class="oc-row"><span class="l">${i.qty} × ${APP.esc(i.manufacturer || '')} ${APP.esc(i.name)}</span><span>${APP.money((i.price || 0) * i.qty)}${i.pct ? ` <span style="color:var(--green);font-size:12px">(${i.pct}% rabatt)</span>` : ''}</span></div><div class="oc-row" style="font-size:12px"><span class="l">${APP.esc(i.info || '')}</span></div></div>`).join('')
     : '<p style="color:var(--text-light);font-size:14px">Varukorgen är tom.</p>';
-  document.getElementById('checkoutTotal').textContent = APP.money(APP.cartTotal());
+  const total = priced.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
+  document.getElementById('discountRow').style.display = discount > 0 ? 'flex' : 'none';
+  document.getElementById('discountTotal').textContent = '− ' + APP.money(discount);
+  document.getElementById('checkoutTotal').textContent = APP.money(total);
 }
 
 function setStep(n) {
@@ -266,6 +282,7 @@ async function placeOrder() {
     alert('Varukorgen är tom.');
     return;
   }
+  const priced = discounted(cart);
   const order = {
     customer: {
       type: custType === 'foretag' ? 'Företag' : 'Privatperson',
@@ -284,15 +301,16 @@ async function placeOrder() {
     },
     shipping: { method: shipMethod === 'dhl' ? 'Skicka med DHL' : 'Hämta i butiken' },
     payment: { method: payMethod === 'faktura' ? 'Svea Faktura' : payMethod === 'delbetalning' ? 'Svea Delbetalning' : 'Svea Kortbetalning' },
-    items: cart.map(i => ({
+    items: priced.map(i => ({
       productId: i.id,
       manufacturer: i.manufacturer,
       name: i.name,
       info: i.info,
       price: i.price,
-      qty: i.qty
+      qty: i.qty,
+      discountPct: i.pct
     })),
-    total: APP.cartTotal()
+    total: priced.reduce((s, i) => s + i.price * (i.qty || 1), 0)
   };
 
   const btn = event.target;
@@ -341,6 +359,10 @@ async function prefillUser() {
     if (first) document.getElementById('f-first').value = first;
     if (last) document.getElementById('f-last').value = last;
     if (d.user.email) document.getElementById('f-email').value = d.user.email;
+    if (d.user.discount && Object.keys(d.user.discount).length) {
+      userDiscount = d.user.discount;
+      renderCheckout();
+    }
   } catch (e) {}
 }
 prefillUser();

@@ -10,6 +10,9 @@ const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const WRITE_DIR = IS_VERCEL ? '/tmp' : DATA_DIR;
 const IMG_CACHE_DIR = path.join(WRITE_DIR, 'img-cache');
+const CARS_FILE = path.join(WRITE_DIR, 'cars.json');
+const RABATTER_FILE = path.join(WRITE_DIR, 'rabatter.json');
+const SETTINGS_FILE = path.join(WRITE_DIR, 'settings.json');
 const SITE_BASE = IS_VERCEL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'localhost'}` : 'http://localhost:3000';
 const PER_PAGE = 60;
 const IMG_SOURCE = 'https://vanessasdack.se';
@@ -50,6 +53,63 @@ function writeJson(file, data) {
 function sendJson(res, code, obj) {
   res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(obj));
+}
+
+const DEFAULT_BRANDS = [
+  ['1', 'Alfa Romeo'], ['52', 'Audi'], ['180', 'Bentley'], ['186', 'BMW'], ['336', 'Cadillac'], ['382', 'Chevrolet'],
+  ['543', 'Chrysler'], ['587', 'Citroen'], ['658', 'Dacia'], ['674', 'Daewoo'], ['696', 'Daihatsu'], ['714', 'Dodge'],
+  ['776', 'Ferrari'], ['796', 'Fiat'], ['870', 'Fisker'], ['873', 'Ford'], ['1059', 'GMC'], ['1081', 'Honda'],
+  ['1145', 'Hummer'], ['1150', 'Hyundai'], ['1219', 'Infiniti'], ['1236', 'Isuzu'], ['1245', 'Iveco'], ['1253', 'Jaguar'],
+  ['1277', 'Jeep'], ['1311', 'Kia'], ['1370', 'Lada'], ['1373', 'Lamborghini'], ['1380', 'Lancia'], ['1393', 'Land Rover'],
+  ['1415', 'Lexus'], ['1446', 'Lincoln'], ['1468', 'Lotus'], ['1473', 'Maserati'], ['1481', 'Mazda'], ['1556', 'McLaren'],
+  ['1559', 'Mercedes'], ['1708', 'Mercury'], ['1728', 'MG'], ['1737', 'Mini'], ['1754', 'Mitsubishi'], ['1828', 'Nissan'],
+  ['1968', 'Opel'], ['2076', 'Peugeot'], ['2166', 'Plymouth'], ['2181', 'Pontiac'], ['2229', 'Porsche'], ['2277', 'Renault'],
+  ['2357', 'Rover'], ['2379', 'Saab'], ['2410', 'Seat'], ['2448', 'Skoda'], ['2482', 'Smart'], ['2490', 'Ssang Yong'],
+  ['2506', 'Subaru'], ['2546', 'Suzuki'], ['2590', 'Tesla'], ['2595', 'Toyota'], ['2699', 'Trailer'], ['2710', 'Volkswagen'],
+  ['2834', 'Volvo']
+];
+
+const DEFAULT_SETTINGS = {
+  openingHours: 'Öppet vardagar 9–17',
+  heroTitle: 'Däck & fälgar som',
+  heroHighlight: 'passar din bil',
+  heroSub: 'Hitta rätt däck och fälgar till rätt pris – med fraktfritt och professionell service.'
+};
+
+function getSettings() {
+  return { ...DEFAULT_SETTINGS, ...(readJson(SETTINGS_FILE) || {}) };
+}
+
+function getAdminCars() {
+  return readJson(CARS_FILE) || [];
+}
+
+function getAllBrands() {
+  const brands = DEFAULT_BRANDS.map(([id, name]) => ({ id, name }));
+  for (const c of getAdminCars()) {
+    if (!brands.some(b => b.name.toLowerCase() === c.brand.toLowerCase())) {
+      brands.push({ id: 'adm-' + encodeURIComponent(c.brand), name: c.brand });
+    }
+  }
+  return brands;
+}
+
+function getDiscountFor(userId) {
+  const rabatter = readJson(RABATTER_FILE) || [];
+  const r = rabatter.find(x => x.userId === userId);
+  return (r && r.perBrand) || {};
+}
+
+function applyDiscount(items, perBrand) {
+  let discountTotal = 0;
+  const out = [];
+  for (const it of items) {
+    const pct = Number(perBrand[it.manufacturer]) || 0;
+    const discountedPrice = pct > 0 ? Math.round((Number(it.price) * (100 - pct)) / 100) : Number(it.price);
+    discountTotal += (Number(it.price) - discountedPrice) * (it.qty || 1);
+    out.push({ ...it, discountPct: pct, discountedPrice });
+  }
+  return { items: out, discountTotal };
 }
 
 function serveFile(res, file, status) {
@@ -481,6 +541,25 @@ async function handle(req, res) {
       return;
     }
     const model = url.searchParams.get('model');
+    const cars = getAdminCars();
+    const adminBrand = make.startsWith('adm-') ? decodeURIComponent(make.slice(4)) : null;
+    if (adminBrand) {
+      const brandCars = cars.filter(c => c.brand.toLowerCase() === adminBrand.toLowerCase());
+      if (!model) {
+        sendJson(res, 200, { items: brandCars.map(c => ({ id: 'adm-m-' + c.id, name: c.model })) });
+        return;
+      }
+      const car = brandCars.find(c => 'adm-m-' + c.id === model);
+      const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })) });
+      return;
+    }
+    if (model && model.startsWith('adm-m-')) {
+      const car = cars.find(c => 'adm-m-' + c.id === model);
+      const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })) });
+      return;
+    }
     let up;
     try {
       const upUrl = `${IMG_SOURCE}/api/search/make/${encodeURIComponent(make)}${model ? '/' + encodeURIComponent(model) : ''}`;
@@ -498,6 +577,17 @@ async function handle(req, res) {
       j = await up.json();
     } catch (e) {
       sendJson(res, 502, { error: 'Ogiltigt svar' });
+      return;
+    }
+    if (!model) {
+      const brand = DEFAULT_BRANDS.find(b => String(b.id) === make);
+      const adminCars = brand ? cars.filter(c => c.brand.toLowerCase() === brand[1].toLowerCase()) : [];
+      const adminModels = new Map(adminCars.map(c => [c.model, c.id]));
+      const items = Object.entries(j.data || {}).map(([id, name]) => ({ id, name: String(name) }));
+      for (const [name, cid] of adminModels) {
+        if (!items.some(i => i.name.toLowerCase() === name.toLowerCase())) items.push({ id: 'adm-m-' + cid, name });
+      }
+      sendJson(res, 200, { items });
       return;
     }
     if (j && j.success == 1 && j.data && typeof j.data === 'object') {
@@ -723,7 +813,7 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    sendJson(res, 200, { user: { id: user.id, name: user.name, email: user.email } });
+    sendJson(res, 200, { user: { id: user.id, name: user.name, email: user.email, discount: getDiscountFor(user.id) } });
     return;
   }
 
@@ -743,7 +833,10 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const orders = (readJson(path.join(WRITE_DIR, 'orders.json')) || []).reverse();
+    const orders = (readJson(path.join(WRITE_DIR, 'orders.json')) || []).reverse().map(o => ({
+      ...o,
+      paid: o.paid !== undefined ? o.paid : (o.payment && o.payment.method ? !/faktura/i.test(o.payment.method) : true)
+    }));
     const status = url.searchParams.get('status');
     const filtered = status ? orders.filter(o => o.status === status) : orders;
     sendJson(res, 200, { orders: filtered });
@@ -770,12 +863,26 @@ async function handle(req, res) {
         const now = new Date();
         const id = 'VD-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(orders.length + 1).padStart(4, '0');
         const user = currentUser(req);
+        let items = order.items;
+        let perBrand = {};
+        let discountTotal = 0;
+        if (user) {
+          perBrand = getDiscountFor(user.id);
+          const applied = applyDiscount(order.items, perBrand);
+          items = applied.items;
+          discountTotal = applied.discountTotal;
+        }
+        const total = items.reduce((s, i) => s + (i.discountedPrice || Number(i.price)) * (i.qty || 1), 0);
         const saved = {
           id,
           created: now.toISOString(),
           status: 'ny',
           userId: user ? user.id : null,
-          ...order
+          paid: order.payment && order.payment.method ? !/faktura/i.test(order.payment.method) : false,
+          discount: Object.keys(perBrand).length && discountTotal > 0 ? { perBrand, discountTotal } : null,
+          ...order,
+          items,
+          total
         };
         orders.push(saved);
         writeJson(ordersFile, orders);
@@ -806,8 +913,176 @@ async function handle(req, res) {
           return;
         }
         if (d.status) order.status = d.status;
+        if (typeof d.paid === 'boolean') order.paid = d.paid;
         writeJson(ordersFile, orders);
         sendJson(res, 200, { success: true, order });
+      } catch {
+        sendJson(res, 400, { error: 'Ogiltig data' });
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/car-brands' && req.method === 'GET') {
+    sendJson(res, 200, { items: getAllBrands() });
+    return;
+  }
+
+  if (url.pathname === '/api/manufacturers' && req.method === 'GET') {
+    const products = readProducts();
+    const set = new Set();
+    for (const p of products) {
+      if (p.manufacturer_name) set.add(p.manufacturer_name);
+    }
+    sendJson(res, 200, { items: [...set].sort((a, b) => a.localeCompare(b, 'sv')) });
+    return;
+  }
+
+  if (url.pathname === '/api/settings' && req.method === 'GET') {
+    sendJson(res, 200, { settings: getSettings() });
+    return;
+  }
+
+  if (url.pathname === '/api/settings' && req.method === 'PUT') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => (body += chunk));
+    req.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        const next = { ...getSettings(), ...(d.settings || {}) };
+        writeJson(SETTINGS_FILE, next);
+        sendJson(res, 200, { success: true, settings: next });
+      } catch {
+        sendJson(res, 400, { error: 'Ogiltig data' });
+      }
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/cars' && req.method === 'GET') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    sendJson(res, 200, { cars: getAdminCars() });
+    return;
+  }
+
+  if (url.pathname === '/api/cars' && req.method === 'POST') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    let body = '';
+    req.on('data', chunk => (body += chunk));
+    req.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        if (!d.brand || !d.model) {
+          sendJson(res, 422, { error: 'Märke och modell krävs' });
+          return;
+        }
+        const cars = getAdminCars();
+        const car = {
+          id: cars.length ? Math.max(...cars.map(c => c.id)) + 1 : 1,
+          brand: d.brand.trim(),
+          model: d.model.trim(),
+          years: d.years ? String(d.years).trim() : ''
+        };
+        cars.push(car);
+        writeJson(CARS_FILE, cars);
+        sendJson(res, 200, { success: true, car });
+      } catch {
+        sendJson(res, 400, { error: 'Ogiltig data' });
+      }
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/cars/') && req.method === 'DELETE') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    const carId = Number(url.pathname.slice('/api/cars/'.length));
+    const cars = getAdminCars().filter(c => c.id !== carId);
+    writeJson(CARS_FILE, cars);
+    sendJson(res, 200, { success: true });
+    return;
+  }
+
+  if (url.pathname === '/api/users' && req.method === 'GET') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    const users = readJson(path.join(WRITE_DIR, 'users.json')) || [];
+    const orders = readJson(path.join(WRITE_DIR, 'orders.json')) || [];
+    const orderCounts = {};
+    for (const o of orders) {
+      if (o.userId) orderCounts[o.userId] = (orderCounts[o.userId] || 0) + 1;
+    }
+    sendJson(res, 200, {
+      users: users.map(u => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        created: u.created,
+        orderCount: orderCounts[u.id] || 0,
+        discount: getDiscountFor(u.id)
+      }))
+    });
+    return;
+  }
+
+  if (url.pathname === '/api/rabatter' && req.method === 'GET') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    const users = readJson(path.join(WRITE_DIR, 'users.json')) || [];
+    const rabatter = readJson(RABATTER_FILE) || [];
+    sendJson(res, 200, {
+      rabatter: rabatter.map(r => {
+        const u = users.find(x => x.id === r.userId);
+        return {
+          userId: r.userId,
+          perBrand: r.perBrand || {},
+          user: u ? { name: u.name, email: u.email } : null
+        };
+      })
+    });
+    return;
+  }
+
+  if (url.pathname.startsWith('/api/rabatter/') && req.method === 'PUT') {
+    if (!isAuthed(req)) {
+      sendJson(res, 401, { error: 'Ej inloggad' });
+      return;
+    }
+    const userId = Number(url.pathname.slice('/api/rabatter/'.length));
+    let body = '';
+    req.on('data', chunk => (body += chunk));
+    req.on('end', () => {
+      try {
+        const d = JSON.parse(body);
+        const perBrand = d.perBrand || {};
+        for (const k of Object.keys(perBrand)) {
+          const v = Number(perBrand[k]);
+          if (v > 0 && v <= 100) perBrand[k] = v;
+          else if (v > 0) perBrand[k] = 100;
+          else delete perBrand[k];
+        }
+        const rabatter = readJson(RABATTER_FILE) || [];
+        const r = rabatter.find(x => x.userId === userId);
+        if (r) r.perBrand = perBrand;
+        else rabatter.push({ userId, perBrand });
+        writeJson(RABATTER_FILE, rabatter);
+        sendJson(res, 200, { success: true });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
       }

@@ -7,6 +7,14 @@ const APP = {
     for (let i = 0; i < s.length; i++) { h = (h * 31 + s.charCodeAt(i)) >>> 0; }
     return h;
   },
+  settingsCache: null,
+  getSettings() {
+    if (this.settingsCache) return Promise.resolve(this.settingsCache);
+    return fetch('/api/settings').then(r => r.json()).then(d => {
+      this.settingsCache = (d && d.settings) || {};
+      return this.settingsCache;
+    }).catch(() => ({}));
+  },
   ratingFor(id) {
     return Math.round((4.3 + (this.hash(id) % 8) / 10) * 10) / 10;
   },
@@ -167,11 +175,15 @@ const NAV_ITEMS = [
 function injectHeader(active) {
   const header = document.getElementById('site-header');
   if (!header) return;
+  APP.getSettings().then(s => {
+    const el = document.getElementById('topbar-hours');
+    if (el && s.openingHours) el.textContent = s.openingHours;
+  });
   header.innerHTML = `
     <div class="topbar">
       <div class="container">
         <span>Alltid fraktfritt! Däck och fälgar till bra priser</span>
-        <span>Öppet vardagar 9–17</span>
+        <span id="topbar-hours">Öppet vardagar 9–17</span>
       </div>
     </div>
     <div class="header-inner">

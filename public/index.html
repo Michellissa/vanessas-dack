@@ -8,7 +8,7 @@
 <meta property="og:title" content="Vanessas Däck – Däck och fälgar till bra priser">
 <meta property="og:description" content="Däck och fälgar till bra priser. Alltid fraktfritt!">
 <meta property="og:type" content="website">
-<link rel="stylesheet" href="/public/styles.css?v=6">
+<link rel="stylesheet" href="/public/styles.css?v=7">
 <link rel="icon" href="/public/logo.svg">
 </head>
 <body>
@@ -23,8 +23,8 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="3"></circle></svg>
           Vanessas Däck · Jordbro
         </span>
-        <h1>Däck &amp; fälgar som <span class="hl">passar din bil</span></h1>
-        <p>Hitta rätt däck och fälgar till rätt pris – med fraktfritt och professionell service.</p>
+        <h1 id="hero-title">Däck &amp; fälgar som <span class="hl">passar din bil</span></h1>
+        <p id="hero-sub">Hitta rätt däck och fälgar till rätt pris – med fraktfritt och professionell service.</p>
         <div class="btns">
           <a class="btn primary" href="/dack">Shoppa däck</a>
           <a class="btn ghost" href="/falgar">Shoppa fälgar</a>
@@ -280,13 +280,30 @@
 
 <footer id="site-footer" class="site"></footer>
 
-<script src="/public/app.js?v=6"></script>
+<script src="/public/app.js?v=7"></script>
 <script>
 injectHeader('/');
 
 const fdBrand = document.getElementById('fd-brand');
 const fdModel = document.getElementById('fd-model');
 const fdYear = document.getElementById('fd-year');
+
+fetch('/api/settings').then(r => r.json()).then(d => {
+  const s = d.settings || {};
+  if (s.heroTitle || s.heroHighlight) {
+    document.getElementById('hero-title').innerHTML =
+      APP.esc(s.heroTitle || '') + (s.heroHighlight ? ' <span class="hl">' + APP.esc(s.heroHighlight) + '</span>' : '');
+  }
+  if (s.heroSub) document.getElementById('hero-sub').textContent = s.heroSub;
+}).catch(() => {});
+
+fetch('/api/car-brands').then(r => r.json()).then(d => {
+  if (d.items && d.items.length) {
+    const current = fdBrand.value;
+    fdBrand.innerHTML = '<option value="">Välj bilmärke</option>' + d.items.map(b => `<option value="${APP.esc(b.id)}">${APP.esc(b.name)}</option>`).join('');
+    fdBrand.value = current;
+  }
+}).catch(() => {});
 
 function fillSelect(sel, items, label) {
   sel.innerHTML = '<option value="">' + (items.length ? label : 'Inga alternativ') + '</option>' + items.map(i => `<option value="${APP.esc(i.id)}">${APP.esc(i.name)}</option>`).join('');
