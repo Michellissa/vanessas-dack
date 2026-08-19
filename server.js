@@ -5,20 +5,17 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 const PORT = process.env.PORT || 3000;
-const PANEL_PASSWORD = process.env.PANEL_PASSWORD || 'vanessas2026';
-const PANEL_HASH = crypto.createHash('sha256').update(PANEL_PASSWORD + ':vd').digest('hex');
+const { getPanelPassword } = require('./config');
+const { openDb } = require('./db');
 const DATA_DIR = path.join(__dirname, 'data');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
 const META_FILE = path.join(DATA_DIR, 'meta.json');
-const ORDERS_FILE = path.join(DATA_DIR, 'orders.json');
-const USERS_FILE = path.join(DATA_DIR, 'users.json');
-const SESSIONS_FILE = path.join(DATA_DIR, 'sessions.json');
-const CARS_FILE = path.join(DATA_DIR, 'cars.json');
-const RABATTER_FILE = path.join(DATA_DIR, 'rabatter.json');
-const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const IMG_DIR = path.join(DATA_DIR, 'images');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const PER_PAGE = 60;
+const PANEL_PASSWORD = getPanelPassword();
+const PANEL_HASH = crypto.createHash('sha256').update(PANEL_PASSWORD + ':vd').digest('hex');
+const db = openDb(path.join(DATA_DIR, 'vanessas.db'));
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -79,11 +76,11 @@ const DEFAULT_SETTINGS = {
 };
 
 function getSettings() {
-  return { ...DEFAULT_SETTINGS, ...(readJson(SETTINGS_FILE) || {}) };
+  return { ...DEFAULT_SETTINGS, ...db.settings.all() };
 }
 
 function getAdminCars() {
-  return readJson(CARS_FILE) || [];
+  return db.cars.all();
 }
 
 function getAllBrands() {
@@ -97,9 +94,7 @@ function getAllBrands() {
 }
 
 function getDiscountFor(userId) {
-  const rabatter = readJson(RABATTER_FILE) || [];
-  const r = rabatter.find(x => x.userId === userId);
-  return (r && r.perBrand) || {};
+  return db.rabatter.get(userId);
 }
 
 function applyDiscount(items, perBrand) {
@@ -137,11 +132,9 @@ function currentUser(req) {
   const v = cookie.find(c => c.startsWith('vd_session='));
   if (!v) return null;
   const token = v.slice('vd_session='.length);
-  const sessions = readJson(SESSIONS_FILE) || [];
-  const s = sessions.find(x => x.token === token);
+  const s = db.sessions.byToken(token);
   if (!s) return null;
-  const users = readJson(USERS_FILE) || [];
-  return users.find(u => u.id === s.userId) || null;
+  return db.users.byId(s.userId);
 }
 
 function hashPassword(password) {
@@ -158,9 +151,7 @@ function verifyPassword(password, stored) {
 
 function makeSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
-  const sessions = readJson(SESSIONS_FILE) || [];
-  sessions.push({ token, userId, created: new Date().toISOString() });
-  writeJson(SESSIONS_FILE, sessions);
+  db.sessions.insert(token, userId, new Date().toISOString());
   return token;
 }
 
@@ -686,20 +677,16 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 422, { error: 'Lösenordet måste vara minst 6 tecken' });
           return;
         }
-        const users = readJson(USERS_FILE) || [];
-        if (users.some(u => u.email.toLowerCase() === d.email.toLowerCase())) {
+        if (db.users.byEmail(d.email)) {
           sendJson(res, 409, { error: 'E-postadressen finns redan' });
           return;
         }
-        const user = {
-          id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
+        const user = db.users.insert({
           name: d.name.trim(),
           email: d.email.trim().toLowerCase(),
           password: hashPassword(d.password),
           created: new Date().toISOString()
-        };
-        users.push(user);
-        writeJson(USERS_FILE, users);
+        });
         const token = makeSession(user.id);
         res.writeHead(200, {
           'Content-Type': 'application/json; charset=utf-8',
@@ -724,8 +711,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const d = JSON.parse(body);
-        const users = readJson(USERS_FILE) || [];
-        const user = users.find(u => u.email.toLowerCase() === (d.email || '').toLowerCase().trim());
+        const user = db.users.byEmail((d.email || '').toLowerCase().trim());
         if (!user || !verifyPassword(d.password || '', user.password)) {
           registerFail(ip);
           sendJson(res, 401, { error: 'Fel e-post eller lösenord' });
@@ -750,7 +736,7 @@ const server = http.createServer(async (req, res) => {
     const v = cookie.find(c => c.startsWith('vd_session='));
     if (v) {
       const token = v.slice('vd_session='.length);
-      writeJson(SESSIONS_FILE, (readJson(SESSIONS_FILE) || []).filter(s => s.token !== token));
+      db.sessions.remove(token);
     }
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
@@ -776,7 +762,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const orders = (readJson(ORDERS_FILE) || []).filter(o => o.userId === user.id).reverse();
+    const orders = db.orders.all().filter(o => o.userId === user.id);
     sendJson(res, 200, { orders });
     return;
   }
@@ -786,7 +772,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const orders = (readJson(ORDERS_FILE) || []).reverse().map(o => ({
+    const orders = db.orders.all().map(o => ({
       ...o,
       paid: o.paid !== undefined ? o.paid : (o.payment && o.payment.method ? !/faktura/i.test(o.payment.method) : true)
     }));
@@ -811,9 +797,8 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 422, { error: 'Kundvagnen är tom' });
           return;
         }
-        const orders = readJson(ORDERS_FILE) || [];
         const now = new Date();
-        const id = 'VD-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(orders.length + 1).padStart(4, '0');
+        const id = 'VD-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(db.orders.count() + 1).padStart(4, '0');
         const user = currentUser(req);
         let items = order.items;
         let perBrand = {};
@@ -836,8 +821,7 @@ const server = http.createServer(async (req, res) => {
           items,
           total
         };
-        orders.push(saved);
-        writeJson(ORDERS_FILE, orders);
+        db.orders.insert(saved);
         sendJson(res, 200, { success: true, order: saved });
       } catch (e) {
         sendJson(res, 400, { error: 'Ogiltig orderdata' });
@@ -857,15 +841,14 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const d = JSON.parse(body);
-        const orders = readJson(ORDERS_FILE) || [];
-        const order = orders.find(o => o.id === orderId);
+        const order = db.orders.byId(orderId);
         if (!order) {
           sendJson(res, 404, { error: 'Ordern hittades inte' });
           return;
         }
         if (d.status) order.status = d.status;
         if (typeof d.paid === 'boolean') order.paid = d.paid;
-        writeJson(ORDERS_FILE, orders);
+        db.orders.update(order);
         sendJson(res, 200, { success: true, order });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -905,7 +888,7 @@ const server = http.createServer(async (req, res) => {
       try {
         const d = JSON.parse(body);
         const next = { ...getSettings(), ...(d.settings || {}) };
-        writeJson(SETTINGS_FILE, next);
+        for (const [k, v] of Object.entries(next)) db.settings.set(k, String(v));
         sendJson(res, 200, { success: true, settings: next });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -937,15 +920,11 @@ const server = http.createServer(async (req, res) => {
           sendJson(res, 422, { error: 'Märke och modell krävs' });
           return;
         }
-        const cars = getAdminCars();
-        const car = {
-          id: cars.length ? Math.max(...cars.map(c => c.id)) + 1 : 1,
+        const car = db.cars.insert({
           brand: d.brand.trim(),
           model: d.model.trim(),
           years: d.years ? String(d.years).trim() : ''
-        };
-        cars.push(car);
-        writeJson(CARS_FILE, cars);
+        });
         sendJson(res, 200, { success: true, car });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -960,8 +939,7 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     const carId = Number(url.pathname.slice('/api/cars/'.length));
-    const cars = getAdminCars().filter(c => c.id !== carId);
-    writeJson(CARS_FILE, cars);
+    db.cars.remove(carId);
     sendJson(res, 200, { success: true });
     return;
   }
@@ -971,19 +949,14 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const users = readJson(USERS_FILE) || [];
-    const orders = readJson(ORDERS_FILE) || [];
-    const orderCounts = {};
-    for (const o of orders) {
-      if (o.userId) orderCounts[o.userId] = (orderCounts[o.userId] || 0) + 1;
-    }
+    const users = db.users.all();
     sendJson(res, 200, {
       users: users.map(u => ({
         id: u.id,
         name: u.name,
         email: u.email,
         created: u.created,
-        orderCount: orderCounts[u.id] || 0,
+        orderCount: db.orders.countByUser(u.id),
         discount: getDiscountFor(u.id)
       }))
     });
@@ -995,16 +968,17 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const users = readJson(USERS_FILE) || [];
-    const rabatter = readJson(RABATTER_FILE) || [];
+    const users = db.users.all();
+    const rabatter = db.rabatter.all();
     sendJson(res, 200, {
-      rabatter: rabatter.map(r => ({
-        userId: r.userId,
-        perBrand: r.perBrand || {},
-        user: users.find(u => u.id === r.userId)
-          ? { name: users.find(u => u.id === r.userId).name, email: users.find(u => u.id === r.userId).email }
-          : null
-      }))
+      rabatter: rabatter.map(r => {
+        const u = users.find(x => x.id === r.userId);
+        return {
+          userId: r.userId,
+          perBrand: r.perBrand,
+          user: u ? { name: u.name, email: u.email } : null
+        };
+      })
     });
     return;
   }
@@ -1027,11 +1001,7 @@ const server = http.createServer(async (req, res) => {
           else if (v > 0) perBrand[k] = 100;
           else delete perBrand[k];
         }
-        const rabatter = readJson(RABATTER_FILE) || [];
-        const r = rabatter.find(x => x.userId === userId);
-        if (r) r.perBrand = perBrand;
-        else rabatter.push({ userId, perBrand });
-        writeJson(RABATTER_FILE, rabatter);
+        db.rabatter.set(userId, perBrand);
         sendJson(res, 200, { success: true });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });

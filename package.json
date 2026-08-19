@@ -11,7 +11,9 @@
   "engines": {
     "node": ">=18"
   },
-  "dependencies": {},
+  "dependencies": {
+    "better-sqlite3": "^13.0.3"
+  },
   "devDependencies": {
     "sharp": "^0.35.3"
   }

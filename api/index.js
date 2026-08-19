@@ -3,16 +3,16 @@ const path = require('path');
 const crypto = require('crypto');
 const { runSync } = require('../sync-lib');
 
-const PANEL_PASSWORD = process.env.PANEL_PASSWORD || 'vanessas2026';
+const { getPanelPassword } = require('../config');
+const { openDb } = require('../db');
+const PANEL_PASSWORD = getPanelPassword();
 const PANEL_HASH = crypto.createHash('sha256').update(PANEL_PASSWORD + ':vd').digest('hex');
 const IS_VERCEL = !!process.env.VERCEL;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const WRITE_DIR = IS_VERCEL ? '/tmp' : DATA_DIR;
 const IMG_CACHE_DIR = path.join(WRITE_DIR, 'img-cache');
-const CARS_FILE = path.join(WRITE_DIR, 'cars.json');
-const RABATTER_FILE = path.join(WRITE_DIR, 'rabatter.json');
-const SETTINGS_FILE = path.join(WRITE_DIR, 'settings.json');
+const db = openDb(path.join(WRITE_DIR, 'vanessas.db'));
 const SITE_BASE = IS_VERCEL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL || process.env.VERCEL_URL || 'localhost'}` : 'http://localhost:3000';
 const PER_PAGE = 60;
 const IMG_SOURCE = 'https://vanessasdack.se';
@@ -77,11 +77,11 @@ const DEFAULT_SETTINGS = {
 };
 
 function getSettings() {
-  return { ...DEFAULT_SETTINGS, ...(readJson(SETTINGS_FILE) || {}) };
+  return { ...DEFAULT_SETTINGS, ...db.settings.all() };
 }
 
 function getAdminCars() {
-  return readJson(CARS_FILE) || [];
+  return db.cars.all();
 }
 
 function getAllBrands() {
@@ -95,9 +95,7 @@ function getAllBrands() {
 }
 
 function getDiscountFor(userId) {
-  const rabatter = readJson(RABATTER_FILE) || [];
-  const r = rabatter.find(x => x.userId === userId);
-  return (r && r.perBrand) || {};
+  return db.rabatter.get(userId);
 }
 
 function applyDiscount(items, perBrand) {
@@ -135,11 +133,9 @@ function currentUser(req) {
   const v = cookie.find(c => c.startsWith('vd_session='));
   if (!v) return null;
   const token = v.slice('vd_session='.length);
-  const sessions = readJson(path.join(WRITE_DIR, 'sessions.json')) || [];
-  const s = sessions.find(x => x.token === token);
+  const s = db.sessions.byToken(token);
   if (!s) return null;
-  const users = readJson(path.join(WRITE_DIR, 'users.json')) || [];
-  return users.find(u => u.id === s.userId) || null;
+  return db.users.byId(s.userId);
 }
 
 function hashPassword(password) {
@@ -156,10 +152,7 @@ function verifyPassword(password, stored) {
 
 function makeSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
-  const file = path.join(WRITE_DIR, 'sessions.json');
-  const sessions = readJson(file) || [];
-  sessions.push({ token, userId, created: new Date().toISOString() });
-  writeJson(file, sessions);
+  db.sessions.insert(token, userId, new Date().toISOString());
   return token;
 }
 
@@ -730,21 +723,16 @@ async function handle(req, res) {
           sendJson(res, 422, { error: 'Lösenordet måste vara minst 6 tecken' });
           return;
         }
-        const usersFile = path.join(WRITE_DIR, 'users.json');
-        const users = readJson(usersFile) || [];
-        if (users.some(u => u.email.toLowerCase() === d.email.toLowerCase())) {
+        if (db.users.byEmail(d.email)) {
           sendJson(res, 409, { error: 'E-postadressen finns redan' });
           return;
         }
-        const user = {
-          id: users.length ? Math.max(...users.map(u => u.id)) + 1 : 1,
+        const user = db.users.insert({
           name: d.name.trim(),
           email: d.email.trim().toLowerCase(),
           password: hashPassword(d.password),
           created: new Date().toISOString()
-        };
-        users.push(user);
-        writeJson(usersFile, users);
+        });
         const token = makeSession(user.id);
         res.writeHead(200, {
           'Content-Type': 'application/json; charset=utf-8',
@@ -769,9 +757,7 @@ async function handle(req, res) {
     req.on('end', () => {
       try {
         const d = JSON.parse(body);
-        const usersFile = path.join(WRITE_DIR, 'users.json');
-        const users = readJson(usersFile) || [];
-        const user = users.find(u => u.email.toLowerCase() === (d.email || '').toLowerCase().trim());
+        const user = db.users.byEmail((d.email || '').toLowerCase().trim());
         if (!user || !verifyPassword(d.password || '', user.password)) {
           registerFail(ip);
           sendJson(res, 401, { error: 'Fel e-post eller lösenord' });
@@ -796,8 +782,7 @@ async function handle(req, res) {
     const v = cookie.find(c => c.startsWith('vd_session='));
     if (v) {
       const token = v.slice('vd_session='.length);
-      const file = path.join(WRITE_DIR, 'sessions.json');
-      writeJson(file, (readJson(file) || []).filter(s => s.token !== token));
+      db.sessions.remove(token);
     }
     res.writeHead(200, {
       'Content-Type': 'application/json; charset=utf-8',
@@ -823,7 +808,7 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const orders = (readJson(path.join(WRITE_DIR, 'orders.json')) || []).filter(o => o.userId === user.id).reverse();
+    const orders = db.orders.all().filter(o => o.userId === user.id).reverse();
     sendJson(res, 200, { orders });
     return;
   }
@@ -833,7 +818,7 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const orders = (readJson(path.join(WRITE_DIR, 'orders.json')) || []).reverse().map(o => ({
+    const orders = db.orders.all().reverse().map(o => ({
       ...o,
       paid: o.paid !== undefined ? o.paid : (o.payment && o.payment.method ? !/faktura/i.test(o.payment.method) : true)
     }));
@@ -858,10 +843,8 @@ async function handle(req, res) {
           sendJson(res, 422, { error: 'Kundvagnen är tom' });
           return;
         }
-        const ordersFile = path.join(WRITE_DIR, 'orders.json');
-        const orders = readJson(ordersFile) || [];
         const now = new Date();
-        const id = 'VD-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(orders.length + 1).padStart(4, '0');
+        const id = 'VD-' + now.getFullYear() + String(now.getMonth() + 1).padStart(2, '0') + String(now.getDate()).padStart(2, '0') + '-' + String(db.orders.count() + 1).padStart(4, '0');
         const user = currentUser(req);
         let items = order.items;
         let perBrand = {};
@@ -884,8 +867,7 @@ async function handle(req, res) {
           items,
           total
         };
-        orders.push(saved);
-        writeJson(ordersFile, orders);
+        db.orders.insert(saved);
         sendJson(res, 200, { success: true, order: saved });
       } catch (e) {
         sendJson(res, 400, { error: 'Ogiltig orderdata' });
@@ -905,16 +887,14 @@ async function handle(req, res) {
     req.on('end', () => {
       try {
         const d = JSON.parse(body);
-        const ordersFile = path.join(WRITE_DIR, 'orders.json');
-        const orders = readJson(ordersFile) || [];
-        const order = orders.find(o => o.id === orderId);
+        const order = db.orders.byId(orderId);
         if (!order) {
           sendJson(res, 404, { error: 'Ordern hittades inte' });
           return;
         }
         if (d.status) order.status = d.status;
         if (typeof d.paid === 'boolean') order.paid = d.paid;
-        writeJson(ordersFile, orders);
+        db.orders.update(order);
         sendJson(res, 200, { success: true, order });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -954,7 +934,7 @@ async function handle(req, res) {
       try {
         const d = JSON.parse(body);
         const next = { ...getSettings(), ...(d.settings || {}) };
-        writeJson(SETTINGS_FILE, next);
+        for (const [k, v] of Object.entries(next)) db.settings.set(k, String(v));
         sendJson(res, 200, { success: true, settings: next });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -986,15 +966,11 @@ async function handle(req, res) {
           sendJson(res, 422, { error: 'Märke och modell krävs' });
           return;
         }
-        const cars = getAdminCars();
-        const car = {
-          id: cars.length ? Math.max(...cars.map(c => c.id)) + 1 : 1,
+        const car = db.cars.insert({
           brand: d.brand.trim(),
           model: d.model.trim(),
           years: d.years ? String(d.years).trim() : ''
-        };
-        cars.push(car);
-        writeJson(CARS_FILE, cars);
+        });
         sendJson(res, 200, { success: true, car });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
@@ -1009,8 +985,7 @@ async function handle(req, res) {
       return;
     }
     const carId = Number(url.pathname.slice('/api/cars/'.length));
-    const cars = getAdminCars().filter(c => c.id !== carId);
-    writeJson(CARS_FILE, cars);
+    db.cars.remove(carId);
     sendJson(res, 200, { success: true });
     return;
   }
@@ -1020,19 +995,14 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const users = readJson(path.join(WRITE_DIR, 'users.json')) || [];
-    const orders = readJson(path.join(WRITE_DIR, 'orders.json')) || [];
-    const orderCounts = {};
-    for (const o of orders) {
-      if (o.userId) orderCounts[o.userId] = (orderCounts[o.userId] || 0) + 1;
-    }
+    const users = db.users.all();
     sendJson(res, 200, {
       users: users.map(u => ({
         id: u.id,
         name: u.name,
         email: u.email,
         created: u.created,
-        orderCount: orderCounts[u.id] || 0,
+        orderCount: db.orders.countByUser(u.id),
         discount: getDiscountFor(u.id)
       }))
     });
@@ -1044,8 +1014,8 @@ async function handle(req, res) {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    const users = readJson(path.join(WRITE_DIR, 'users.json')) || [];
-    const rabatter = readJson(RABATTER_FILE) || [];
+    const users = db.users.all();
+    const rabatter = db.rabatter.all();
     sendJson(res, 200, {
       rabatter: rabatter.map(r => {
         const u = users.find(x => x.id === r.userId);
@@ -1077,11 +1047,7 @@ async function handle(req, res) {
           else if (v > 0) perBrand[k] = 100;
           else delete perBrand[k];
         }
-        const rabatter = readJson(RABATTER_FILE) || [];
-        const r = rabatter.find(x => x.userId === userId);
-        if (r) r.perBrand = perBrand;
-        else rabatter.push({ userId, perBrand });
-        writeJson(RABATTER_FILE, rabatter);
+        db.rabatter.set(userId, perBrand);
         sendJson(res, 200, { success: true });
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
