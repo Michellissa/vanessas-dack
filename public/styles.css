@@ -93,7 +93,7 @@ header.site.scrolled .logo img { height: 32px; }
 }
 .nav a:hover { color: #fff; }
 .nav a.active { color: #fff; }
-.nav a::after {
+.nav a.active::after {
   content: '';
   position: absolute;
   left: 14px;
@@ -102,11 +102,7 @@ header.site.scrolled .logo img { height: 32px; }
   height: 2px;
   border-radius: 2px;
   background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform .22s ease;
 }
-.nav a:hover::after, .nav a.active::after { transform: scaleX(1); }
 
 .header-actions { display: flex; align-items: center; gap: 10px; margin-left: auto; flex: none; }
 
