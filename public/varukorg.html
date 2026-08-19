@@ -49,15 +49,7 @@
   </div>
 </div>
 
-<footer class="site">
-  <div class="container">
-    <div class="cols">
-      <div><h4>Vanessas Däck</h4><a href="/">Hem</a><a href="/villkor">Villkor</a></div>
-      <div><h4>Handla</h4><a href="/dack">Däck</a><a href="/falgar">Fälgar</a></div>
-    </div>
-    <div class="bottom"><span>© 2026 Vanessas Däck.</span><span>Alltid fraktfritt!</span></div>
-  </div>
-</footer>
+<footer id="site-footer"></footer>
 
 <script src="/public/app.js"></script>
 <script>
@@ -69,7 +61,7 @@ function render() {
   const summary = document.getElementById('summary');
 
   if (!cart.length) {
-    items.innerHTML = '<div class="empty" style="padding:60px 20px"><div class="icon">🛒</div><h3>Din varukorg är tom</h3><p style="margin-top:8px">Hittade du inget? Utforska vårt sortiment.</p><div style="margin-top:18px"><a class="btn dark" href="/dack">Till däck</a> <a class="btn dark" href="/falgar">Till fälgar</a></div></div>';
+    items.innerHTML = '<div class="empty" style="padding:60px 20px"><div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></div><h3>Din varukorg är tom</h3><p style="margin-top:8px">Hittade du inget? Utforska vårt sortiment.</p><div style="margin-top:18px"><a class="btn dark" href="/dack">Till däck</a> <a class="btn dark" href="/falgar">Till fälgar</a></div></div>';
     summary.innerHTML = '';
     return;
   }
@@ -98,7 +90,7 @@ function render() {
     <div class="sum-row"><span>Frakt</span><span>0 kr</span></div>
     <div class="sum-row total"><span>Att betala</span><span>${APP.money(total)}</span></div>
     <a class="btn primary" href="/kassan">Gå till kassan</a>
-    <div class="free">🚚 Alltid fraktfritt</div>`;
+    <div class="free"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"></path><path d="M16 8h4l3 3v5h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>Alltid fraktfritt</div>`;
 }
 
 render();

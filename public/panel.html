@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
@@ -6,14 +6,14 @@
 <title>Vanessas Däck – Lagersaldo</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #1e4456; }
-  header { background: #1e4456; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #0e1524; }
+  header { background: #0e1524; color: #fff; padding: 16px 24px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
   header h1 { font-size: 20px; }
   header .sub { font-size: 13px; opacity: .8; }
   .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; padding: 14px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
   input[type=text] { padding: 8px 12px; border: 1px solid #c5d2da; border-radius: 6px; font-size: 14px; width: 320px; max-width: 100%; }
   label { font-size: 14px; display: flex; align-items: center; gap: 6px; }
-  button { background: #f6921e; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+  button { background: #ff7a1a; color: #fff; border: 0; border-radius: 6px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
   button:disabled { opacity: .5; cursor: wait; }
   table { width: 100%; border-collapse: collapse; background: #fff; }
   th, td { text-align: left; padding: 8px 12px; font-size: 13px; border-bottom: 1px solid #edf1f4; white-space: nowrap; }
@@ -25,12 +25,12 @@
   .b-red { background: #fde8e8; color: #c0392b; }
   .price { font-weight: 600; }
   .pager { padding: 12px 24px; display: flex; gap: 8px; align-items: center; }
-  .pager button { background: #1e4456; }
+  .pager button { background: #0e1524; }
   .status { font-size: 13px; }
   .wrap-all { overflow-x: auto; }
   .tabs { display: flex; gap: 8px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
-  .tabs button { background: #eef3f6; color: #1e4456; }
-  .tabs button.active { background: #1e4456; color: #fff; }
+  .tabs button { background: #eef3f6; color: #0e1524; }
+  .tabs button.active { background: #0e1524; color: #fff; }
   .order-card { background: #fff; border: 1px solid #dde5ea; border-radius: 8px; padding: 14px 18px; margin: 12px 24px; }
   .order-card .oc-head { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; font-weight: 700; }
   .order-card .oc-line { display: flex; justify-content: space-between; font-size: 13px; padding: 2px 0; color: #444; }
@@ -43,8 +43,8 @@
   .st-handled { background: #e3f6e5; color: #1c7a2d; }
   #ordersView { display: none; }
   .order-filters { display: flex; gap: 8px; padding: 12px 24px; background: #fff; border-bottom: 1px solid #dde5ea; }
-  .order-filters button { background: #eef3f6; color: #1e4456; }
-  .order-filters button.active { background: #1e4456; color: #fff; }
+  .order-filters button { background: #eef3f6; color: #0e1524; }
+  .order-filters button.active { background: #0e1524; color: #fff; }
 </style>
 </head>
 <body>

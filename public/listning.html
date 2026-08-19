@@ -63,7 +63,7 @@
       </div>
       <div class="grid" id="results"><div class="spinner"></div></div>
       <div class="empty" id="emptyMsg" style="display:none">
-        <div class="icon">🔍</div>
+        <div class="icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg></div>
         <div>Inga produkter matchade dina val.</div>
       </div>
       <div class="pager" id="pager"></div>
@@ -71,26 +71,7 @@
   </div>
 </div>
 
-<footer class="site">
-  <div class="container">
-    <div class="cols">
-      <div>
-        <h4>Vanessas Däck</h4>
-        <a href="/">Hem</a>
-        <a href="/villkor">Villkor</a>
-      </div>
-      <div>
-        <h4>Handla</h4>
-        <a href="/dack">Däck</a>
-        <a href="/falgar">Fälgar</a>
-      </div>
-    </div>
-    <div class="bottom">
-      <span>© 2026 Vanessas Däck. Alla rättigheter förbehållna.</span>
-      <span>Alltid fraktfritt!</span>
-    </div>
-  </div>
-</footer>
+<footer id="site-footer"></footer>
 
 <script src="/public/app.js"></script>
 <script>
@@ -101,7 +82,7 @@ const TITLE = TYPE === 'falgar' ? 'Fälgar' : 'Däck';
 
 document.title = TITLE + ' – Vanessas Däck';
 document.getElementById('crumb').textContent = params.get('q') ? 'Sökresultat för "' + params.get('q') + '"' : TITLE;
-injectHeader('/' + (TYPE === 'falgar' ? 'falgar' : 'dack'));
+injectHeader('/' + (TYPE === 'falgar' ? 'falgar' : 'dack') + (params.get('season') ? '?season=' + params.get('season') : ''));
 
 const state = {
   q: params.get('q') || '',
@@ -114,7 +95,7 @@ async function loadFilterValues() {
 
   const fill = (id, items, label) => {
     const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">' + label + '</option>' + items.map(i => `<option value="${APP.esc(i.value)}">${APP.esc(i.label || i.value)} (${i.count})</option>`).join('');
+    sel.innerHTML = '<option value="">' + label + '</option>' + items.map(i => `<option value="${APP.esc(i.value)}">${APP.esc(i.label || i.value)}</option>`).join('');
   };
 
   fill('f-mfg', d.manufacturers, 'Alla märken');
@@ -171,7 +152,9 @@ async function loadProducts(page) {
 
   document.getElementById('totalText').textContent = d.total.toLocaleString('sv-SE') + ' produkter';
   document.getElementById('emptyMsg').style.display = d.total ? 'none' : 'block';
+  APP.cacheProducts(d.products);
   document.getElementById('results').innerHTML = d.products.map(p => APP.productCard(p)).join('');
+  APP.reveal();
 
   const pager = document.getElementById('pager');
   if (d.pages <= 1) {

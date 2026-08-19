@@ -457,6 +457,41 @@ async function handle(req, res) {
     return;
   }
 
+  if (url.pathname === '/api/car-model' && req.method === 'GET') {
+    const make = url.searchParams.get('make');
+    if (!make) {
+      sendJson(res, 400, { error: 'make krävs' });
+      return;
+    }
+    const model = url.searchParams.get('model');
+    let up;
+    try {
+      const upUrl = `${IMG_SOURCE}/api/search/make/${encodeURIComponent(make)}${model ? '/' + encodeURIComponent(model) : ''}`;
+      up = await fetch(upUrl, { headers: { Accept: 'application/json', 'User-Agent': 'Mozilla/5.0' } });
+    } catch (e) {
+      sendJson(res, 502, { error: 'Kunde inte nå bilmodellstjänsten' });
+      return;
+    }
+    if (!up.ok) {
+      sendJson(res, 502, { error: 'Kunde inte nå bilmodellstjänsten' });
+      return;
+    }
+    let j;
+    try {
+      j = await up.json();
+    } catch (e) {
+      sendJson(res, 502, { error: 'Ogiltigt svar' });
+      return;
+    }
+    if (j && j.success == 1 && j.data && typeof j.data === 'object') {
+      const items = Object.entries(j.data).map(([id, name]) => ({ id, name: String(name) }));
+      sendJson(res, 200, { items });
+      return;
+    }
+    sendJson(res, 404, { error: 'Ingen data' });
+    return;
+  }
+
   if (url.pathname === '/api/gallery' && req.method === 'GET') {
     const products = readProducts();
     if (!products.length) {
@@ -473,7 +508,8 @@ async function handle(req, res) {
         (p.manufacturer_name || '').toLowerCase().includes(q) ||
         (p.name || '').toLowerCase().includes(q) ||
         (p.info || '').toLowerCase().includes(q) ||
-        String(p.id).includes(q)
+        String(p.id).includes(q) ||
+        String(p.supplier_reference || '').includes(q)
       );
     }
     if (type === 'falgar') list = list.filter(p => p.type === 'falgar');

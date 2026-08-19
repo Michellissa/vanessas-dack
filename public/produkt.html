@@ -20,26 +20,7 @@
   </div>
 </div>
 
-<footer class="site">
-  <div class="container">
-    <div class="cols">
-      <div>
-        <h4>Vanessas Däck</h4>
-        <a href="/">Hem</a>
-        <a href="/villkor">Villkor</a>
-      </div>
-      <div>
-        <h4>Handla</h4>
-        <a href="/dack">Däck</a>
-        <a href="/falgar">Fälgar</a>
-      </div>
-    </div>
-    <div class="bottom">
-      <span>© 2026 Vanessas Däck. Alla rättigheter förbehållna.</span>
-      <span>Alltid fraktfritt!</span>
-    </div>
-  </div>
-</footer>
+<footer id="site-footer"></footer>
 
 <script src="/public/app.js"></script>
 <script>
@@ -51,7 +32,7 @@ async function load() {
   const res = await fetch(APP.api + '/product-local?id=' + id);
   const d = await res.json();
   if (!d.product) {
-    document.getElementById('product').innerHTML = '<div class="empty"><div class="icon">😕</div>Produkten hittades inte.</div>';
+    document.getElementById('product').innerHTML = '<div class="empty"><div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><path d="M9 9h.01M15 9h.01"></path></svg></div>Produkten hittades inte.</div>';
     return;
   }
   const p = d.product;
