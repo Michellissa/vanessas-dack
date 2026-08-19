@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "sync": "node sync.js",
-    "build": "node sync.js",
+    "build": "node sync.js && node download-images.js",
     "start": "node server.js"
   },
   "engines": {

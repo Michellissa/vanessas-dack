@@ -233,17 +233,31 @@ function validImage(buf) {
   return false;
 }
 
-async function fetchImage(file) {
-  const cacheFile = path.join(IMG_CACHE_DIR, file);
-  if (fs.existsSync(cacheFile)) return fs.readFileSync(cacheFile);
+async function fetchImage(file, acceptWebp) {
+  const cacheDirs = [path.join(DATA_DIR, 'images'), IMG_CACHE_DIR];
+  if (acceptWebp) {
+    const wf = path.basename(file, path.extname(file)) + '.webp';
+    for (const dir of [path.join(DATA_DIR, 'images', 'webp'), path.join(IMG_CACHE_DIR, 'webp')]) {
+      try {
+        const f = path.join(dir, wf);
+        if (fs.existsSync(f)) return { buf: fs.readFileSync(f), webp: true };
+      } catch (e) {}
+    }
+  }
+  for (const dir of cacheDirs) {
+    try {
+      const f = path.join(dir, file);
+      if (fs.existsSync(f)) return { buf: fs.readFileSync(f), webp: false };
+    } catch (e) {}
+  }
   for (let dir = 1; dir <= 4; dir++) {
     try {
-      const res = await fetch(`${IMG_SOURCE}/img/${dir}/${file}`);
+      const res = await fetch(`${IMG_SOURCE}/img/${dir}/${encodeURIComponent(file)}`, { headers: { 'User-Agent': 'Mozilla/5.0' } });
       const buf = Buffer.from(await res.arrayBuffer());
       if (res.ok && validImage(buf)) {
         fs.mkdirSync(IMG_CACHE_DIR, { recursive: true });
-        fs.writeFileSync(cacheFile, buf);
-        return buf;
+        fs.writeFileSync(path.join(IMG_CACHE_DIR, file), buf);
+        return { buf, webp: false };
       }
     } catch (e) {}
   }
@@ -366,10 +380,13 @@ async function handle(req, res) {
 
   if (url.pathname.startsWith('/images/') && req.method === 'GET') {
     const file = path.basename(decodeURIComponent(url.pathname.slice('/images/'.length)));
-    const buf = await fetchImage(file);
-    if (buf) {
-      res.writeHead(200, { 'Content-Type': 'image/' + (file.toLowerCase().endsWith('.png') ? 'png' : file.toLowerCase().endsWith('.gif') ? 'gif' : file.toLowerCase().endsWith('.svg') ? 'svg+xml' : file.toLowerCase().endsWith('.webp') ? 'webp' : 'jpeg'), 'Cache-Control': 'public, max-age=86400' });
-      res.end(buf);
+    const acceptsWebp = /image\/webp|image\/\*/i.test(req.headers.accept || '');
+    const img = await fetchImage(file, acceptsWebp);
+    if (img) {
+      const lower = file.toLowerCase();
+      const type = img.webp ? 'image/webp' : (lower.endsWith('.png') ? 'image/png' : lower.endsWith('.gif') ? 'image/gif' : lower.endsWith('.svg') ? 'image/svg+xml' : lower.endsWith('.webp') ? 'image/webp' : 'image/jpeg');
+      res.writeHead(200, { 'Content-Type': type, 'Cache-Control': 'public, max-age=86400' });
+      res.end(img.buf);
       return;
     }
     sendJson(res, 404, { error: 'Bild saknas' });

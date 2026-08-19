@@ -21,7 +21,7 @@ function isValidImage(buf) {
 async function download(url, dest) {
   for (let i = 0; i < RETRIES; i++) {
     try {
-      const res = await fetch(url);
+      const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
       if (!res.ok) return false;
       const buf = Buffer.from(await res.arrayBuffer());
       if (!isValidImage(buf)) return false;
@@ -82,6 +82,24 @@ async function main() {
   }
 
   console.log(`Klar: ${ok}/${todo.length} nerladdade, ${files.length} totalt i data/images (${Math.round(totalBytes / 1048576)} MB, ${Math.round((Date.now() - started) / 1000)}s)`);
+
+  try {
+    const sharp = require('sharp');
+    const webpDir = path.join(IMG_DIR, 'webp');
+    fs.mkdirSync(webpDir, { recursive: true });
+    let webpOk = 0;
+    await mapConcurrent(files, async f => {
+      const dest = path.join(webpDir, path.basename(f, path.extname(f)) + '.webp');
+      if (fs.existsSync(dest)) { webpOk++; return; }
+      try {
+        await sharp(path.join(IMG_DIR, f)).rotate().resize({ width: 800, withoutEnlargement: true }).webp({ quality: 78 }).toFile(dest);
+        webpOk++;
+      } catch (e) {}
+    }, 6);
+    console.log(`WebP: ${webpOk}/${files.length} genererade`);
+  } catch (e) {
+    console.log('WebP hoppas över (sharp saknas): ' + e.message);
+  }
 }
 
 main().catch(e => {
