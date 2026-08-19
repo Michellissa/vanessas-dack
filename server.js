@@ -101,7 +101,8 @@ function applyDiscount(items, perBrand) {
   let discountTotal = 0;
   const out = [];
   for (const it of items) {
-    const pct = Number(perBrand[it.manufacturer]) || 0;
+    const already = it.discountPct > 0 || it.discountedPrice !== undefined;
+    const pct = already ? 0 : Number(perBrand[it.manufacturer]) || 0;
     const discountedPrice = pct > 0 ? Math.round((Number(it.price) * (100 - pct)) / 100) : Number(it.price);
     discountTotal += (Number(it.price) - discountedPrice) * (it.qty || 1);
     out.push({ ...it, discountPct: pct, discountedPrice });
@@ -145,12 +146,14 @@ function hashPassword(password) {
 
 function verifyPassword(password, stored) {
   const [salt, hash] = stored.split(':');
+  if (!salt || !hash || hash.length !== 128) return false;
   const calc = crypto.scryptSync(password, salt, 64);
   return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), calc);
 }
 
 function makeSession(userId) {
   const token = crypto.randomBytes(32).toString('hex');
+  db.sessions.cleanup(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
   db.sessions.insert(token, userId, new Date().toISOString());
   return token;
 }

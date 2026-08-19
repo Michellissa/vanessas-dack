@@ -282,7 +282,6 @@ async function placeOrder() {
     alert('Varukorgen är tom.');
     return;
   }
-  const priced = discounted(cart);
   const order = {
     customer: {
       type: custType === 'foretag' ? 'Företag' : 'Privatperson',
@@ -301,16 +300,15 @@ async function placeOrder() {
     },
     shipping: { method: shipMethod === 'dhl' ? 'Skicka med DHL' : 'Hämta i butiken' },
     payment: { method: payMethod === 'faktura' ? 'Svea Faktura' : payMethod === 'delbetalning' ? 'Svea Delbetalning' : 'Svea Kortbetalning' },
-    items: priced.map(i => ({
+    items: cart.map(i => ({
       productId: i.id,
       manufacturer: i.manufacturer,
       name: i.name,
       info: i.info,
       price: i.price,
-      qty: i.qty,
-      discountPct: i.pct
+      qty: i.qty
     })),
-    total: priced.reduce((s, i) => s + i.price * (i.qty || 1), 0)
+    total: cart.reduce((s, i) => s + i.price * (i.qty || 1), 0)
   };
 
   const btn = event.target;

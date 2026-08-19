@@ -61,7 +61,7 @@ async function init() {
       return;
     }
     box.innerHTML = d.orders.map(o => {
-      const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} × ${esc(i.manufacturer || '')} ${esc(i.name)}</span><span>${(i.price * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
+      const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} × ${esc(i.manufacturer || '')} ${esc(i.name)}</span><span>${((i.discountedPrice || i.price) * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
       const badge = o.status === 'handled' ? '<span class="badge b-handled">Behandlad</span>' : '<span class="badge b-new">Ny</span>';
       return `<div class="order-card">
         <div class="oc-head"><span>${esc(o.id)}</span><span>${badge}</span></div>

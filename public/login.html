@@ -27,7 +27,8 @@
 <footer id="site-footer"></footer>
 <script src="/public/app.js?v=7"></script>
 <script>
-const next = new URLSearchParams(location.search).get('next') || '/mina-sidor';
+const nextRaw = new URLSearchParams(location.search).get('next') || '/mina-sidor';
+const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/mina-sidor';
 
 async function doLogin() {
   const email = document.getElementById('email').value.trim();

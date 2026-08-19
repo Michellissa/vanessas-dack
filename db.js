@@ -53,7 +53,8 @@ function openDb(dbFile) {
     sessions: {
       insert: (token, userId, created) => db.prepare('INSERT INTO sessions (token, userId, created) VALUES (?, ?, ?)').run(token, userId, created),
       remove: token => db.prepare('DELETE FROM sessions WHERE token = ?').run(token),
-      byToken: token => db.prepare('SELECT * FROM sessions WHERE token = ?').get(token) || null
+      byToken: token => db.prepare('SELECT * FROM sessions WHERE token = ?').get(token) || null,
+      cleanup: beforeIso => db.prepare('DELETE FROM sessions WHERE created < ?').run(beforeIso)
     },
     orders: {
       all: () => db.prepare('SELECT id, userId, created, data FROM orders ORDER BY created DESC').all().map(r => JSON.parse(r.data)),
