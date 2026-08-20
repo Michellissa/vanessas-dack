@@ -328,7 +328,11 @@ fdModel.addEventListener('change', async () => {
 });
 
 function finderGo() {
-  location.href = '/dack';
+  const q = new URLSearchParams();
+  if (fdBrand.value) q.set('car_brand', fdBrand.value);
+  if (fdModel.value) q.set('car_model', fdModel.value);
+  if (fdYear.value) q.set('car_year', fdYear.value);
+  location.href = '/dack' + (q.toString() ? '?' + q.toString() : '');
 }
 
 fetch('/api/filter-values?type=dack').then(r => r.json()).then(d => {

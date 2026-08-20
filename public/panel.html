@@ -139,6 +139,9 @@
       <div class="f"><label>Märke</label><input type="text" id="car-brand" placeholder="Volvo" list="brand-list"></div>
       <div class="f"><label>Modell</label><input type="text" id="car-model" placeholder="V70"></div>
       <div class="f"><label>Årsmodeller (kommaseparerat, valfritt)</label><input type="text" id="car-years" placeholder="2010, 2011, 2012" style="width:220px"></div>
+      <div class="f"><label>Dimension – bredd (t.ex. 225)</label><input type="text" id="car-width" placeholder="225" style="width:90px"></div>
+      <div class="f"><label>Dimension – profil (t.ex. 65)</label><input type="text" id="car-ratio" placeholder="65" style="width:90px"></div>
+      <div class="f"><label>Dimension – tum (t.ex. 17)</label><input type="text" id="car-inch" placeholder="17" style="width:90px"></div>
       <button onclick="addCar()">Lägg till</button>
     </div>
     <datalist id="brand-list"></datalist>
@@ -147,7 +150,7 @@
     <h3>Admin-lagda bilar</h3>
     <div class="wrap-all">
     <table class="cars-table">
-      <thead><tr><th>Märke</th><th>Modell</th><th>Årsmodeller</th><th></th></tr></thead>
+      <thead><tr><th>Märke</th><th>Modell</th><th>Årsmodeller</th><th>Dimension</th><th></th></tr></thead>
       <tbody id="carRows"></tbody>
     </table>
     </div>
@@ -321,20 +324,21 @@ async function loadCars() {
     const d = await r.json();
     const tbody = document.getElementById('carRows');
     if (!d.cars || !d.cars.length) {
-      tbody.innerHTML = '<tr><td colspan="4">Inga admin-lagda bilar.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="5">Inga admin-lagda bilar.</td></tr>';
       return;
     }
     tbody.innerHTML = d.cars.map(c => `<tr>
       <td>${esc(c.brand)}</td>
       <td>${esc(c.model)}</td>
       <td>${esc(c.years || '–')}</td>
+      <td>${c.width && c.inch ? esc(c.width + '/' + c.ratio + ' R' + c.inch) : '–'}</td>
       <td><button class="del" onclick="deleteCar(${c.id})">Ta bort</button></td>
     </tr>`).join('');
     const dl = document.getElementById('brand-list');
     const brands = [...new Set(d.cars.map(c => c.brand))];
     dl.innerHTML = brands.map(b => `<option value="${esc(b)}">`).join('');
   } catch (e) {
-    document.getElementById('carRows').innerHTML = '<tr><td colspan="4">Kunde inte hämta bilar.</td></tr>';
+    document.getElementById('carRows').innerHTML = '<tr><td colspan="5">Kunde inte hämta bilar.</td></tr>';
   }
 }
 
@@ -342,16 +346,22 @@ async function addCar() {
   const brand = document.getElementById('car-brand').value.trim();
   const model = document.getElementById('car-model').value.trim();
   const years = document.getElementById('car-years').value.trim();
+  const width = document.getElementById('car-width').value.trim();
+  const ratio = document.getElementById('car-ratio').value.trim();
+  const inch = document.getElementById('car-inch').value.trim();
   if (!brand || !model) { alert('Ange märke och modell.'); return; }
   const r = await fetch('/api/cars', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ brand, model, years })
+    body: JSON.stringify({ brand, model, years, width, ratio, inch })
   });
   if (r.ok) {
     document.getElementById('car-brand').value = '';
     document.getElementById('car-model').value = '';
     document.getElementById('car-years').value = '';
+    document.getElementById('car-width').value = '';
+    document.getElementById('car-ratio').value = '';
+    document.getElementById('car-inch').value = '';
     loadCars();
   } else {
     alert('Kunde inte lägga till bilen.');

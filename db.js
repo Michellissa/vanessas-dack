@@ -37,7 +37,10 @@ function openDb(dbFile) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       brand TEXT NOT NULL,
       model TEXT NOT NULL,
-      years TEXT NOT NULL DEFAULT ''
+      years TEXT NOT NULL DEFAULT '',
+      width TEXT NOT NULL DEFAULT '',
+      ratio TEXT NOT NULL DEFAULT '',
+      inch TEXT NOT NULL DEFAULT ''
     );
     CREATE TABLE IF NOT EXISTS rabatter (
       userId INTEGER PRIMARY KEY,
@@ -55,6 +58,12 @@ function openDb(dbFile) {
   const userCols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
   if (!userCols.includes('role')) {
     db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
+  }
+  const carCols = db.prepare('PRAGMA table_info(cars)').all().map(c => c.name);
+  if (!carCols.includes('width')) {
+    db.exec("ALTER TABLE cars ADD COLUMN width TEXT NOT NULL DEFAULT ''");
+    db.exec("ALTER TABLE cars ADD COLUMN ratio TEXT NOT NULL DEFAULT ''");
+    db.exec("ALTER TABLE cars ADD COLUMN inch TEXT NOT NULL DEFAULT ''");
   }
 
   return {
@@ -89,7 +98,8 @@ function openDb(dbFile) {
     cars: {
       all: () => db.prepare('SELECT * FROM cars ORDER BY id').all(),
       insert: c => {
-        const info = db.prepare('INSERT INTO cars (brand, model, years) VALUES (?, ?, ?)').run(c.brand, c.model, c.years);
+        const info = db.prepare('INSERT INTO cars (brand, model, years, width, ratio, inch) VALUES (?, ?, ?, ?, ?, ?)')
+          .run(c.brand, c.model, c.years || '', c.width || '', c.ratio || '', c.inch || '');
         return { id: Number(info.lastInsertRowid), ...c };
       },
       remove: id => db.prepare('DELETE FROM cars WHERE id = ?').run(id)

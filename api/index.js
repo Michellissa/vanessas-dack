@@ -226,16 +226,34 @@ function productView(p) {
   };
 }
 
+function toSet(v) {
+  return new Set(String(v || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean));
+}
+
+const SEARCH_ALIASES = {
+  vinter: 'winter',
+  sommar: 'summer',
+  sommardack: 'summer',
+  sommardäck: 'summer',
+  'åretrunt': 'all-season',
+  helars: 'all-season',
+  helårs: 'all-season',
+  dubbdack: 'studded',
+  dubbdäck: 'studded'
+};
+
 function filterProducts(products, params) {
   const q = (params.q || '').toLowerCase().trim();
+  const qq = SEARCH_ALIASES[q] || q;
   const type = params.type || '';
-  const marke = (params.marke || '').toLowerCase();
-  const inch = params.inch || '';
-  const season = params.season || '';
-  const width = params.width || '';
-  const ratio = params.ratio || '';
-  const boltCircle = params.bolt_circle || '';
-  const et = params.et || '';
+  const marke = toSet(params.marke);
+  const inch = toSet(params.inch);
+  const season = toSet(params.season);
+  const width = toSet(params.width);
+  const ratio = toSet(params.ratio);
+  const boltCircle = toSet(params.bolt_circle);
+  const boltCount = toSet(params.bolt_count);
+  const et = toSet(params.et);
   const stock = params.stock === '1';
   const hasImage = params.has_image === '1';
 
@@ -246,18 +264,20 @@ function filterProducts(products, params) {
       (p.name || '').toLowerCase().includes(q) ||
       (p.info || '').toLowerCase().includes(q) ||
       String(p.id).includes(q) ||
-      String(p.supplier_reference || '').includes(q)
+      String(p.supplier_reference || '').includes(q) ||
+      (qq !== q && ((p.name || '').toLowerCase().includes(qq) || (p.info || '').toLowerCase().includes(qq)))
     );
   }
   if (type === 'falgar') list = list.filter(p => p.type === 'falgar');
   if (type === 'dack') list = list.filter(p => p.type === 'dack');
-  if (marke) list = list.filter(p => (p.manufacturer_name || '').toLowerCase() === marke);
-  if (inch) list = list.filter(p => String(p.inch) === inch);
-  if (season) list = list.filter(p => (p.season || '').split(',').includes(season));
-  if (width && type === 'dack') list = list.filter(p => String(p.width) === width);
-  if (ratio && type === 'dack') list = list.filter(p => String(p.profile) === ratio);
-  if (boltCircle) list = list.filter(p => String(p.bolt_circle) === boltCircle);
-  if (et) list = list.filter(p => String(p.et) === et);
+  if (marke.size) list = list.filter(p => marke.has((p.manufacturer_name || '').toLowerCase()));
+  if (inch.size) list = list.filter(p => inch.has(String(p.inch)));
+  if (season.size) list = list.filter(p => (p.season || '').split(',').some(s => season.has(s)));
+  if (width.size && type === 'dack') list = list.filter(p => width.has(String(p.width)));
+  if (ratio.size && type === 'dack') list = list.filter(p => ratio.has(String(p.profile)));
+  if (boltCircle.size && type !== 'dack') list = list.filter(p => boltCircle.has(String(p.bolt_circle)));
+  if (boltCount.size && type !== 'dack') list = list.filter(p => boltCount.has(String(p.bolt_count)));
+  if (et.size && type !== 'dack') list = list.filter(p => et.has(String(p.et)));
   if (stock) list = list.filter(p => p.stock > 0 || p.supplier_stock_external > 0);
   if (hasImage) list = list.filter(p => p.image && p.image.split(',').filter(Boolean).length > 0);
   return list;
@@ -488,44 +508,39 @@ async function handle(req, res) {
       sendJson(res, 503, { error: 'Ingen data ännu' });
       return;
     }
-    const type = url.searchParams.get('type') || '';
-    let list = products;
-    if (type === 'falgar') list = list.filter(p => p.type === 'falgar');
-    if (type === 'dack') list = list.filter(p => p.type === 'dack');
-
-    const mfg = new Map();
-    const inches = new Map();
-    const widths = new Map();
-    const ratios = new Map();
-    const seasons = new Map();
-    const boltCircles = new Map();
-    const ets = new Map();
-
-    for (const p of list) {
-      const m = p.manufacturer_name;
-      if (m) mfg.set(m, (mfg.get(m) || 0) + 1);
-      if (p.inch) inches.set(String(p.inch), (inches.get(String(p.inch)) || 0) + 1);
-      if (p.season) {
-        for (const s of p.season.split(',')) {
-          seasons.set(s, (seasons.get(s) || 0) + 1);
-        }
-      }
-      if (p.width) widths.set(String(p.width), (widths.get(String(p.width)) || 0) + 1);
-      if (p.profile) ratios.set(String(p.profile), (ratios.get(String(p.profile)) || 0) + 1);
-      if (p.bolt_circle) boltCircles.set(String(p.bolt_circle), (boltCircles.get(String(p.bolt_circle)) || 0) + 1);
-      if (p.et !== undefined && p.et !== null) ets.set(String(p.et), (ets.get(String(p.et)) || 0) + 1);
-    }
-
+    const params = Object.fromEntries(url.searchParams);
     const seasonNames = { sommar: 'Sommar', dubb: 'Dubb', 'nordisk-friktion': 'Nordisk friktion', 'eu-friktion': 'EU-friktion' };
     const byName = (a, b) => a.value.localeCompare(b.value, 'sv');
+    const byNum = (a, b) => Number(a.value) - Number(b.value);
+
+    const countFacet = (dim) => {
+      const rest = { ...params };
+      delete rest[dim];
+      const list = filterProducts(products, rest);
+      const map = new Map();
+      for (const p of list) {
+        if (dim === 'marke' && p.manufacturer_name) map.set(p.manufacturer_name, (map.get(p.manufacturer_name) || 0) + 1);
+        if (dim === 'inch' && p.inch) map.set(String(p.inch), (map.get(String(p.inch)) || 0) + 1);
+        if (dim === 'season') { for (const s of (p.season || '').split(',')) { if (s) map.set(s, (map.get(s) || 0) + 1); } }
+        if (dim === 'width' && p.width) map.set(String(p.width), (map.get(String(p.width)) || 0) + 1);
+        if (dim === 'ratio' && p.profile) map.set(String(p.profile), (map.get(String(p.profile)) || 0) + 1);
+        if (dim === 'bolt_circle' && p.bolt_circle) map.set(String(p.bolt_circle), (map.get(String(p.bolt_circle)) || 0) + 1);
+        if (dim === 'bolt_count' && p.bolt_count) map.set(String(p.bolt_count), (map.get(String(p.bolt_count)) || 0) + 1);
+        if (dim === 'et' && p.et !== undefined && p.et !== null) map.set(String(p.et), (map.get(String(p.et)) || 0) + 1);
+      }
+      return [...map.entries()].map(([value, count]) => ({ value, count }));
+    };
+
     sendJson(res, 200, {
-      manufacturers: [...mfg.entries()].map(([value, count]) => ({ value, count })).sort(byName),
-      inches: [...inches.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => Number(a.value) - Number(b.value)),
-      widths: [...widths.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => Number(a.value) - Number(b.value)),
-      ratios: [...ratios.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => Number(a.value) - Number(b.value)),
-      seasons: [...seasons.entries()].map(([value, count]) => ({ value, label: seasonNames[value] || value, count })).sort(byName),
-      boltCircles: [...boltCircles.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => Number(a.value) - Number(b.value)),
-      ets: [...ets.entries()].map(([value, count]) => ({ value, count })).sort((a, b) => Number(a.value) - Number(b.value))
+      total: filterProducts(products, params).length,
+      manufacturers: countFacet('marke').sort(byName),
+      inches: countFacet('inch').sort(byNum),
+      widths: countFacet('width').sort(byNum),
+      ratios: countFacet('ratio').sort(byNum),
+      seasons: countFacet('season').map(x => ({ ...x, label: seasonNames[x.value] || x.value })).sort(byName),
+      boltCircles: countFacet('bolt_circle').sort(byNum),
+      boltCounts: countFacet('bolt_count').sort(byNum),
+      ets: countFacet('et').sort(byNum)
     });
     return;
   }
@@ -547,13 +562,13 @@ async function handle(req, res) {
       }
       const car = brandCars.find(c => 'adm-m-' + c.id === model);
       const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
-      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })) });
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch } : null });
       return;
     }
     if (model && model.startsWith('adm-m-')) {
       const car = cars.find(c => 'adm-m-' + c.id === model);
       const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
-      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })) });
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch } : null });
       return;
     }
     let up;
@@ -576,12 +591,13 @@ async function handle(req, res) {
       return;
     }
     if (!model) {
-      const brand = DEFAULT_BRANDS.find(b => String(b.id) === make);
+      const brand = DEFAULT_BRANDS.find(b => String(b[0]) === make);
       const adminCars = brand ? cars.filter(c => c.brand.toLowerCase() === brand[1].toLowerCase()) : [];
       const adminModels = new Map(adminCars.map(c => [c.model, c.id]));
-      const items = Object.entries(j.data || {}).map(([id, name]) => ({ id, name: String(name) }));
+      let items = Object.entries(j.data || {}).map(([id, name]) => ({ id, name: String(name) }));
       for (const [name, cid] of adminModels) {
-        if (!items.some(i => i.name.toLowerCase() === name.toLowerCase())) items.push({ id: 'adm-m-' + cid, name });
+        items = items.filter(i => i.name.toLowerCase() !== name.toLowerCase());
+        items.push({ id: 'adm-m-' + cid, name });
       }
       sendJson(res, 200, { items });
       return;
@@ -972,7 +988,10 @@ async function handle(req, res) {
         const car = db.cars.insert({
           brand: d.brand.trim(),
           model: d.model.trim(),
-          years: d.years ? String(d.years).trim() : ''
+          years: d.years ? String(d.years).trim() : '',
+          width: d.width ? String(d.width).trim() : '',
+          ratio: d.ratio ? String(d.ratio).trim() : '',
+          inch: d.inch ? String(d.inch).trim() : ''
         });
         sendJson(res, 200, { success: true, car });
       } catch {

@@ -14,47 +14,53 @@
 
 <div class="container">
   <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><span id="crumb">Däck</span></div>
+
+  <div class="cat-tabs" id="cat-tabs">
+    <a class="tab" id="tab-dack" href="/dack">Däck</a>
+    <a class="tab" id="tab-falgar" href="/falgar">Fälgar</a>
+  </div>
+
+  <div class="guide" id="guide">
+    <div class="guide-head">
+      <button class="gtab active" id="gtab-car" onclick="showGuide('car')">Välj bilmodell</button>
+      <button class="gtab" id="gtab-size" onclick="showGuide('size')">Välj storlek</button>
+    </div>
+    <div class="guide-body" id="guide-car">
+      <select id="g-brand" onchange="carBrand()"><option value="">Bilmärke</option></select>
+      <select id="g-model" disabled onchange="carModel()"><option value="">Modell</option></select>
+      <select id="g-year" disabled onchange="carYear()"><option value="">Årsmodell</option></select>
+      <button class="btn dark" id="g-clear-car" style="display:none;padding:12px 18px" onclick="clearCar()">Rensa bil</button>
+      <span class="g-info" id="g-car-info"></span>
+    </div>
+    <div class="guide-body" id="guide-size" style="display:none">
+      <select id="g-season" style="display:none" onchange="guideSet('season', this.value)"><option value="">Säsong</option></select>
+      <select id="g-width" style="display:none" onchange="guideSet('width', this.value)"><option value="">Bredd (mm)</option></select>
+      <select id="g-ratio" style="display:none" onchange="guideSet('ratio', this.value)"><option value="">Profil (%)</option></select>
+      <select id="g-inch" onchange="guideSet('inch', this.value)"><option value="">Fälgdiameter (tum)</option></select>
+      <select id="g-bolt_circle" style="display:none" onchange="guideSet('bolt_circle', this.value)"><option value="">Bultcirkel (mm)</option></select>
+      <select id="g-bolt_count" style="display:none" onchange="guideSet('bolt_count', this.value)"><option value="">Antal bultar</option></select>
+      <select id="g-et" style="display:none" onchange="guideSet('et', this.value)"><option value="">ET (inpressning)</option></select>
+      <span class="g-info" id="g-size-info"></span>
+    </div>
+  </div>
+
   <div class="layout">
     <aside class="sidebar">
       <h3>Filtrera</h3>
       <div class="group">
-        <label><input type="checkbox" id="f-stock"> Endast i lager <span class="count" id="f-stock-count"></span></label>
+        <label class="g-title" style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:0">
+          <input type="checkbox" id="f-stock" style="width:16px;height:16px;accent-color:var(--accent)"> Endast i lager
+        </label>
       </div>
-      <div class="group" id="group-season" style="display:none">
-        <label>Säsong</label>
-        <select id="f-season"><option value="">Alla säsonger</option></select>
-      </div>
-      <div class="group">
-        <label>Märke</label>
-        <select id="f-mfg"><option value="">Alla märken</option></select>
-      </div>
-      <div class="group">
-        <label>Tum (fälgdiameter)</label>
-        <select id="f-inch"><option value="">Alla storlekar</option></select>
-      </div>
-      <div class="group" id="group-width" style="display:none">
-        <label>Bredd (mm)</label>
-        <select id="f-width"><option value="">Alla bredder</option></select>
-      </div>
-      <div class="group" id="group-ratio" style="display:none">
-        <label>Profil (%)</label>
-        <select id="f-ratio"><option value="">Alla profiler</option></select>
-      </div>
-      <div class="group" id="group-bolt" style="display:none">
-        <label>Bultcirkel</label>
-        <select id="f-bolt"><option value="">Alla bultcirklar</option></select>
-      </div>
-      <div class="group" id="group-et" style="display:none">
-        <label>ET (inpressning)</label>
-        <select id="f-et"><option value="">Alla ET</option></select>
-      </div>
+      <div id="filters"><p class="muted">Laddar filter...</p></div>
       <button class="btn dark" style="width:100%" onclick="resetFilters()">Rensa filter</button>
     </aside>
 
     <div>
+      <div class="chip-row" id="chip-row"></div>
       <div class="results-top">
         <span class="total" id="totalText">Laddar...</span>
-        <select id="sort" onchange="loadProducts(1)">
+        <select id="sort" onchange="reload(1)">
           <option value="">Sortering: Relevans</option>
           <option value="price_asc">Pris: lägst först</option>
           <option value="price_desc">Pris: högst först</option>
@@ -78,122 +84,330 @@
 const params = new URLSearchParams(location.search);
 const TYPE = location.pathname.startsWith('/falgar') ? 'falgar' : (location.pathname === '/sok' ? '' : (params.get('type') || 'dack'));
 const TITLE = TYPE === 'falgar' ? 'Fälgar' : 'Däck';
+const IS_SEARCH = location.pathname === '/sok';
 
 document.title = TITLE + ' – Vanessas Däck';
 document.getElementById('crumb').textContent = params.get('q') ? 'Sökresultat för "' + params.get('q') + '"' : TITLE;
 injectHeader('/' + (TYPE === 'falgar' ? 'falgar' : 'dack') + (params.get('season') ? '?season=' + params.get('season') : ''));
 
+if (IS_SEARCH) {
+  document.getElementById('cat-tabs').style.display = 'none';
+  document.getElementById('guide').style.display = 'none';
+}
+document.getElementById('tab-dack').classList.toggle('active', TYPE === 'dack');
+document.getElementById('tab-falgar').classList.toggle('active', TYPE === 'falgar');
+
+const list = v => (params.get(v) || '').split(',').filter(Boolean);
 const state = {
   q: params.get('q') || '',
   type: TYPE,
-  page: 1
+  page: 1,
+  marke: list('marke'),
+  inch: list('inch'),
+  season: list('season'),
+  width: list('width'),
+  ratio: list('ratio'),
+  bolt_circle: list('bolt_circle'),
+  bolt_count: list('bolt_count'),
+  et: list('et'),
+  stock: params.get('stock') === '1',
+  car: null
 };
 
-async function loadFilterValues() {
-  const d = await fetch(APP.api + '/filter-values?type=' + state.type).then(r => r.json());
+const DIMS = ['marke', 'inch', 'season', 'width', 'ratio', 'bolt_circle', 'bolt_count', 'et'];
+const DIM_LABELS = {
+  marke: 'Märke', inch: 'Fälgdiameter', season: 'Säsong', width: 'Bredd', ratio: 'Profil',
+  bolt_circle: 'Bultcirkel', bolt_count: 'Bultar', et: 'ET'
+};
+const SEASON_NAMES = { sommar: 'Sommar', dubb: 'Dubb', 'nordisk-friktion': 'Nordisk friktion', 'eu-friktion': 'EU-friktion' };
 
-  const fill = (id, items, label) => {
-    const sel = document.getElementById(id);
-    sel.innerHTML = '<option value="">' + label + '</option>' + items.map(i => `<option value="${APP.esc(i.value)}">${APP.esc(i.label || i.value)}</option>`).join('');
-  };
+function esc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
 
-  fill('f-mfg', d.manufacturers, 'Alla märken');
-  fill('f-inch', d.inches, 'Alla storlekar');
-
-  const isDack = state.type === 'dack';
-  document.getElementById('group-season').style.display = isDack ? 'block' : 'none';
-  document.getElementById('group-width').style.display = isDack ? 'block' : 'none';
-  document.getElementById('group-ratio').style.display = isDack ? 'block' : 'none';
-  document.getElementById('group-bolt').style.display = isDack ? 'none' : 'block';
-  document.getElementById('group-et').style.display = isDack ? 'none' : 'block';
-
-  if (isDack) {
-    fill('f-season', d.seasons, 'Alla säsonger');
-    fill('f-width', d.widths, 'Alla bredder');
-    fill('f-ratio', d.ratios, 'Alla profiler');
-  } else {
-    fill('f-bolt', d.boltCircles, 'Alla bultcirklar');
-    fill('f-et', d.ets, 'Alla ET');
+function buildParams(page) {
+  const p = new URLSearchParams({ q: state.q, type: state.type, sort: document.getElementById('sort').value, page: page || 1 });
+  if (state.stock) p.set('stock', '1');
+  for (const dim of DIMS) {
+    if (state[dim].length) p.set(dim, state[dim].join(','));
   }
+  return p;
+}
 
-  const urlParams = new URLSearchParams(location.search);
-  const prefill = {
-    marke: 'f-mfg', inch: 'f-inch', season: 'f-season', width: 'f-width',
-    ratio: 'f-ratio', bolt_circle: 'f-bolt', et: 'f-et', stock: 'f-stock'
-  };
-  for (const [param, id] of Object.entries(prefill)) {
-    const v = urlParams.get(param);
-    if (v !== null && v !== '') {
-      if (param === 'stock') document.getElementById(id).checked = v === '1';
-      else document.getElementById(id).value = v;
+function updateUrl() {
+  const p = buildParams(state.page);
+  const u = (location.pathname === '/sok' ? '/sok' : (TYPE === 'falgar' ? '/falgar' : '/dack')) + '?' + p.toString();
+  history.replaceState(null, '', u);
+}
+
+async function reload(page) {
+  state.page = page || 1;
+  const qp = buildParams(state.page);
+  updateUrl();
+  try {
+    const [res, fv] = await Promise.all([
+      fetch(APP.api + '/products?' + qp.toString()).then(r => r.json()),
+      fetch(APP.api + '/filter-values?' + qp.toString()).then(r => r.json())
+    ]);
+    renderSidebar(fv);
+    fillGuide(fv);
+    renderChips();
+
+    document.getElementById('totalText').textContent = res.total.toLocaleString('sv-SE') + ' produkter';
+    document.getElementById('emptyMsg').style.display = res.total ? 'none' : 'block';
+    APP.cacheProducts(res.products);
+    document.getElementById('results').innerHTML = res.products.map(p => APP.productCard(p)).join('');
+    APP.reveal();
+
+    const pager = document.getElementById('pager');
+    if (res.pages <= 1) { pager.innerHTML = ''; return; }
+    let html = '<button aria-label="Föregående sida" onclick="reload(1)" ' + (res.page === 1 ? 'disabled' : '') + '>«</button>';
+    const start = Math.max(1, res.page - 2);
+    const end = Math.min(res.pages, res.page + 2);
+    for (let i = start; i <= end; i++) {
+      html += `<button aria-label="Sida ${i}" onclick="reload(${i})" class="${i === res.page ? 'active' : ''}">${i}</button>`;
+    }
+    html += '<button aria-label="Nästa sida" onclick="reload(' + res.pages + ')" ' + (res.page === res.pages ? 'disabled' : '') + '>»</button>';
+    pager.innerHTML = html;
+  } catch (e) {
+    document.getElementById('results').innerHTML = '<p class="muted">Kunde inte hämta produkter.</p>';
+  }
+}
+
+/* ---------- SIDOFILTER (kryssrutor) ---------- */
+const GROUP_CONFIG = [
+  { dim: 'season', data: 'seasons', label: v => SEASON_NAMES[v] || v },
+  { dim: 'marke', data: 'manufacturers', label: v => v },
+  { dim: 'inch', data: 'inches', label: v => v + '"' },
+  { dim: 'width', data: 'widths', label: v => v + ' mm' },
+  { dim: 'ratio', data: 'ratios', label: v => v + '%' },
+  { dim: 'bolt_circle', data: 'boltCircles', label: v => v + ' mm' },
+  { dim: 'bolt_count', data: 'boltCounts', label: v => v + ' st' },
+  { dim: 'et', data: 'ets', label: v => v }
+];
+
+function visibleGroups() {
+  if (state.type === 'dack') return GROUP_CONFIG.filter(g => ['season', 'marke', 'inch', 'width', 'ratio'].includes(g.dim));
+  if (state.type === 'falgar') return GROUP_CONFIG.filter(g => ['marke', 'inch', 'bolt_circle', 'bolt_count', 'et'].includes(g.dim));
+  return GROUP_CONFIG.filter(g => ['season', 'marke', 'inch'].includes(g.dim));
+}
+
+function renderSidebar(d) {
+  const box = document.getElementById('filters');
+  const groups = visibleGroups();
+  if (!groups.length) { box.innerHTML = ''; return; }
+  box.innerHTML = groups.map(g => {
+    const items = d[g.data] || [];
+    const checked = new Set(state[g.dim]);
+    const opts = items.map(it => {
+      const isChecked = checked.has(it.value);
+      const disabled = it.count === 0 && !isChecked;
+      return `<label class="${disabled ? 'disabled' : ''}"><input type="checkbox" value="${esc(it.value)}" ${isChecked ? 'checked' : ''}> ${esc(g.label(it.value))} <span class="count">(${it.count})</span></label>`;
+    }).join('');
+    return `<div class="group"><label class="g-title">${esc(DIM_LABELS[g.dim])}</label><div class="check-list">${opts}</div></div>`;
+  }).join('');
+  box.querySelectorAll('.check-list').forEach(listEl => {
+    const dim = groups[Array.from(box.children).indexOf(listEl.parentElement)].dim;
+    listEl.querySelectorAll('input').forEach(cb => {
+      cb.addEventListener('change', () => {
+        const set = new Set(state[dim]);
+        if (cb.checked) set.add(cb.value); else set.delete(cb.value);
+        state[dim] = [...set];
+        reload(1);
+      });
+    });
+  });
+  document.getElementById('f-stock').checked = state.stock;
+}
+
+/* ---------- GUIDE ---------- */
+function showGuide(mode) {
+  document.getElementById('gtab-car').classList.toggle('active', mode === 'car');
+  document.getElementById('gtab-size').classList.toggle('active', mode === 'size');
+  document.getElementById('guide-car').style.display = mode === 'car' ? 'flex' : 'none';
+  document.getElementById('guide-size').style.display = mode === 'size' ? 'flex' : 'none';
+}
+
+const GUIDE_DIMS = TYPE === 'falgar' ? ['bolt_circle', 'bolt_count', 'et', 'inch'] : ['season', 'width', 'ratio', 'inch'];
+
+function fillGuide(d) {
+  const isDack = state.type === 'dack';
+  const vis = new Set(GUIDE_DIMS);
+  for (const dim of ['season', 'width', 'ratio', 'bolt_circle', 'bolt_count', 'et', 'inch']) {
+    const el = document.getElementById('g-' + dim);
+    el.style.display = vis.has(dim) ? '' : 'none';
+    const cfg = GROUP_CONFIG.find(c => c.dim === dim);
+    const items = d[cfg.data] || [];
+    const cur = state[dim][0] || '';
+    let html = `<option value="">Välj ${DIM_LABELS[dim].toLowerCase()}</option>`;
+    for (const it of items) {
+      html += `<option value="${esc(it.value)}" ${it.value === cur ? 'selected' : ''}>${esc(cfg.label(it.value))} (${it.count})</option>`;
+    }
+    el.innerHTML = html;
+    el.disabled = items.length === 0;
+  }
+  document.getElementById('g-size-info').textContent = isDack
+    ? 'Välj en eller flera storlekar – antalet visar hur många produkter som finns.'
+    : 'Välj dimensioner för att hitta rätt fälgar.';
+}
+
+function guideSet(dim, value) {
+  if (value === '') { state[dim] = []; }
+  else if (state[dim][0] === value) { state[dim] = []; }
+  else { state[dim] = [value]; }
+  reload(1);
+}
+
+/* ---------- BILGUIDE ---------- */
+let carBrands = null;
+async function loadCarBrands() {
+  try {
+    const r = await fetch('/api/car-brands');
+    const d = await r.json();
+    carBrands = d.items || [];
+    const sel = document.getElementById('g-brand');
+    sel.innerHTML = '<option value="">Välj bilmärke</option>' + carBrands.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('');
+  } catch (e) {}
+}
+
+async function carBrand() {
+  const sel = document.getElementById('g-brand');
+  document.getElementById('g-model').innerHTML = '<option value="">Modell</option>';
+  document.getElementById('g-model').disabled = true;
+  document.getElementById('g-year').innerHTML = '<option value="">Årsmodell</option>';
+  document.getElementById('g-year').disabled = true;
+  document.getElementById('g-clear-car').style.display = 'none';
+  document.getElementById('g-car-info').textContent = '';
+  if (!sel.value) return;
+  try {
+    const r = await fetch('/api/car-model?make=' + encodeURIComponent(sel.value));
+    const d = await r.json();
+    const m = document.getElementById('g-model');
+    m.innerHTML = '<option value="">Välj modell</option>' + (d.items || []).map(i => `<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');
+    m.disabled = false;
+  } catch (e) {}
+}
+
+async function carModel() {
+  const brand = document.getElementById('g-brand').value;
+  const model = document.getElementById('g-model').value;
+  document.getElementById('g-year').innerHTML = '<option value="">Årsmodell</option>';
+  document.getElementById('g-year').disabled = true;
+  if (!model) return;
+  try {
+    const r = await fetch('/api/car-model?make=' + encodeURIComponent(brand) + '&model=' + encodeURIComponent(model));
+    const d = await r.json();
+    const y = document.getElementById('g-year');
+    y.innerHTML = '<option value="">Välj årsmodell</option>' + (d.items || []).map(i => `<option value="${esc(i.id)}">${esc(i.name)}</option>`).join('');
+    y.disabled = false;
+    window.__carDims = d.car || null;
+  } catch (e) {}
+}
+
+function carYear() {
+  const brand = document.getElementById('g-brand');
+  const model = document.getElementById('g-model');
+  const year = document.getElementById('g-year');
+  if (!year.value) return;
+  const bName = brand.options[brand.selectedIndex].textContent;
+  const mName = model.options[model.selectedIndex].textContent;
+  const yName = year.options[year.selectedIndex].textContent;
+  const dims = window.__carDims || null;
+  state.car = { label: bName + ' ' + mName + ' ' + yName, dims };
+  document.getElementById('g-clear-car').style.display = '';
+  document.getElementById('g-car-info').innerHTML = dims && dims.width && dims.inch
+    ? 'Visar däck för <b>' + esc(bName + ' ' + mName + ' ' + yName) + '</b> – dimension ' + esc(dims.width + '/' + dims.ratio + ' R' + dims.inch)
+    : 'Vald bil: <b>' + esc(bName + ' ' + mName + ' ' + yName) + '</b> (lägg till dimension i panelen för att filtrera)';
+  if (dims && dims.width && dims.inch) {
+    if (dims.width) state.width = [dims.width];
+    if (dims.ratio) state.ratio = [dims.ratio];
+    if (dims.inch) state.inch = [dims.inch];
+  }
+  reload(1);
+}
+
+function clearCar() {
+  state.car = null;
+  window.__carDims = null;
+  const g = ['g-brand', 'g-model', 'g-year'];
+  for (const id of g) {
+    const el = document.getElementById(id);
+    el.innerHTML = id === 'g-brand' ? (carBrands ? '<option value="">Välj bilmärke</option>' + carBrands.map(b => `<option value="${esc(b.id)}">${esc(b.name)}</option>`).join('') : '<option value="">Bilmärke</option>') : '<option value="">' + (id === 'g-model' ? 'Modell' : 'Årsmodell') + '</option>';
+    el.disabled = id !== 'g-brand';
+  }
+  document.getElementById('g-clear-car').style.display = 'none';
+  document.getElementById('g-car-info').textContent = '';
+  if (state.car && state.car.dims) {
+    state.width = []; state.ratio = []; state.inch = [];
+  }
+  reload(1);
+}
+
+/* ---------- CHIPS ---------- */
+function renderChips() {
+  const row = document.getElementById('chip-row');
+  let html = '';
+  for (const dim of DIMS) {
+    if (state[dim].length === 0) continue;
+    const cfg = GROUP_CONFIG.find(c => c.dim === dim);
+    for (const v of state[dim]) {
+      html += `<span class="fchip">${esc(DIM_LABELS[dim])}: ${esc(cfg.label(v))} <button onclick="removeChip('${dim}', '${esc(v)}')" aria-label="Ta bort">×</button></span>`;
     }
   }
+  if (state.stock) html += `<span class="fchip">Endast i lager <button onclick="removeChip('stock')" aria-label="Ta bort">×</button></span>`;
+  if (state.car) {
+    const d = state.car.dims;
+    const dimText = d && d.width && d.inch ? ` (${d.width}/${d.ratio} R${d.inch})` : '';
+    html += `<span class="fchip">Bil: ${esc(state.car.label + dimText)} <button onclick="clearCar()" aria-label="Ta bort">×</button></span>`;
+  }
+  const has = html !== '';
+  html += has ? '<button class="chip-clear" onclick="resetFilters()">Rensa alla</button>' : '';
+  row.innerHTML = html;
 }
 
-async function loadProducts(page) {
-  state.page = page;
-  const q = new URLSearchParams({
-    q: state.q,
-    type: state.type,
-    marke: document.getElementById('f-mfg').value,
-    inch: document.getElementById('f-inch').value,
-    season: document.getElementById('f-season').value,
-    width: document.getElementById('f-width').value,
-    ratio: document.getElementById('f-ratio').value,
-    bolt_circle: document.getElementById('f-bolt').value,
-    et: document.getElementById('f-et').value,
-    stock: document.getElementById('f-stock').checked ? '1' : '0',
-    sort: document.getElementById('sort').value,
-    page
-  });
-  const res = await fetch(APP.api + '/products?' + q.toString());
-  const d = await res.json();
-
-  document.getElementById('totalText').textContent = d.total.toLocaleString('sv-SE') + ' produkter';
-  document.getElementById('emptyMsg').style.display = d.total ? 'none' : 'block';
-  APP.cacheProducts(d.products);
-  document.getElementById('results').innerHTML = d.products.map(p => APP.productCard(p)).join('');
-  APP.reveal();
-
-  const pager = document.getElementById('pager');
-  if (d.pages <= 1) {
-    pager.innerHTML = '';
-    return;
-  }
-  let html = '<button aria-label="Föregående sida" onclick="loadProducts(1)" ' + (d.page === 1 ? 'disabled' : '') + '>«</button>';
-  const start = Math.max(1, d.page - 2);
-  const end = Math.min(d.pages, d.page + 2);
-  for (let i = start; i <= end; i++) {
-    html += `<button aria-label="Sida ${i}" onclick="loadProducts(${i})" class="${i === d.page ? 'active' : ''}">${i}</button>`;
-  }
-  html += '<button aria-label="Nästa sida" onclick="loadProducts(' + d.pages + ')" ' + (d.page === d.pages ? 'disabled' : '') + '>»</button>';
-  pager.innerHTML = html;
+function removeChip(dim, value) {
+  if (dim === 'stock') { state.stock = false; reload(1); return; }
+  state[dim] = state[dim].filter(v => v !== value);
+  reload(1);
 }
 
+/* ---------- RESET ---------- */
 function resetFilters() {
-  document.getElementById('f-stock').checked = false;
-  document.getElementById('f-mfg').value = '';
-  document.getElementById('f-inch').value = '';
-  document.getElementById('f-season').value = '';
-  document.getElementById('f-width').value = '';
-  document.getElementById('f-ratio').value = '';
-  document.getElementById('f-bolt').value = '';
-  document.getElementById('f-et').value = '';
+  for (const dim of DIMS) state[dim] = [];
+  state.stock = false;
   document.getElementById('sort').value = '';
-  loadProducts(1);
+  clearCar();
 }
 
-document.getElementById('f-stock').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-mfg').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-inch').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-season').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-width').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-ratio').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-bolt').addEventListener('change', () => loadProducts(1));
-document.getElementById('f-et').addEventListener('change', () => loadProducts(1));
+document.getElementById('f-stock').addEventListener('change', () => {
+  state.stock = document.getElementById('f-stock').checked;
+  reload(1);
+});
 
-loadFilterValues();
-loadProducts(1);
+/* ---------- URL-förifyllning av bilväljare + start ---------- */
+async function init() {
+  await loadCarBrands();
+  let applied = false;
+  if (params.get('car_brand')) {
+    document.getElementById('g-brand').value = params.get('car_brand');
+    if (document.getElementById('g-brand').value) {
+      await carBrand();
+      if (params.get('car_model')) {
+        document.getElementById('g-model').value = params.get('car_model');
+        if (document.getElementById('g-model').value) {
+          await carModel();
+          if (params.get('car_year')) {
+            document.getElementById('g-year').value = params.get('car_year');
+            if (document.getElementById('g-year').value) {
+              carYear();
+              applied = true;
+            }
+          }
+        }
+      }
+    }
+  }
+  if (!applied) reload(1);
+}
+init();
 </script>
 </body>
 </html>
