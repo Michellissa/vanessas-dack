@@ -325,6 +325,7 @@ function carYear() {
 }
 
 function clearCar() {
+  const hadDims = state.car && state.car.dims && state.car.dims.width;
   state.car = null;
   window.__carDims = null;
   const g = ['g-brand', 'g-model', 'g-year'];
@@ -335,7 +336,7 @@ function clearCar() {
   }
   document.getElementById('g-clear-car').style.display = 'none';
   document.getElementById('g-car-info').textContent = '';
-  if (state.car && state.car.dims) {
+  if (hadDims) {
     state.width = []; state.ratio = []; state.inch = [];
   }
   reload(1);
