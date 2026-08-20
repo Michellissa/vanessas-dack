@@ -368,16 +368,17 @@ const server = http.createServer(async (req, res) => {
 
   if (url.pathname === '/robots.txt' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-    res.end('User-agent: *\nDisallow: /panel\nDisallow: /gallery\nDisallow: /api\nDisallow: /logga-in\nDisallow: /skapa-konto\nDisallow: /mina-sidor\nSitemap: http://localhost:' + PORT + '/sitemap.xml\n');
+    res.end('User-agent: *\nDisallow: /panel\nDisallow: /gallery\nDisallow: /api\nDisallow: /logga-in\nDisallow: /skapa-konto\nDisallow: /mina-sidor\nSitemap: http://' + (req.headers.host || 'localhost') + '/sitemap.xml\n');
     return;
   }
 
   if (url.pathname === '/sitemap.xml' && req.method === 'GET') {
     const products = readJson(PRODUCTS_FILE) || [];
+    const base = 'http://' + (req.headers.host || 'localhost');
     const staticUrls = ['', '/dack', '/falgar', '/varukorg', '/villkor', '/bra-att-veta', '/vinterdack-val', '/kontakta-oss'];
-    const urls = staticUrls.map(u => `<url><loc>http://localhost:${PORT}${u}</loc></url>`);
+    const urls = staticUrls.map(u => `<url><loc>${base}${u}</loc></url>`);
     for (const p of products) {
-      urls.push(`<url><loc>http://localhost:${PORT}/produkt?id=${p.id}</loc></url>`);
+      urls.push(`<url><loc>${base}/produkt?id=${p.id}</loc></url>`);
     }
     res.writeHead(200, { 'Content-Type': 'application/xml; charset=utf-8' });
     res.end(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join('')}</urlset>`);
@@ -814,13 +815,13 @@ const server = http.createServer(async (req, res) => {
         }
         const total = items.reduce((s, i) => s + (i.discountedPrice || Number(i.price)) * (i.qty || 1), 0);
         const saved = {
+          ...order,
           id,
           created: now.toISOString(),
           status: 'ny',
           userId: user ? user.id : null,
           paid: order.payment && order.payment.method ? !/faktura/i.test(order.payment.method) : false,
           discount: Object.keys(perBrand).length && discountTotal > 0 ? { perBrand, discountTotal } : null,
-          ...order,
           items,
           total
         };

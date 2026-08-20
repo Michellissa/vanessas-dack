@@ -1,6 +1,15 @@
 const Database = require('better-sqlite3');
 const path = require('path');
 
+function parseJson(str, label) {
+  try {
+    return JSON.parse(str);
+  } catch {
+    console.error('db.js: korrupt JSON i ' + label + ', hoppas över');
+    return null;
+  }
+}
+
 function openDb(dbFile) {
   const db = new Database(dbFile);
   db.pragma('journal_mode = WAL');
@@ -37,6 +46,9 @@ function openDb(dbFile) {
       key TEXT PRIMARY KEY,
       value TEXT NOT NULL
     );
+    CREATE INDEX IF NOT EXISTS idx_orders_userId ON orders(userId);
+    CREATE INDEX IF NOT EXISTS idx_orders_created ON orders(created);
+    CREATE INDEX IF NOT EXISTS idx_sessions_created ON sessions(created);
   `);
 
   return {
@@ -57,10 +69,10 @@ function openDb(dbFile) {
       cleanup: beforeIso => db.prepare('DELETE FROM sessions WHERE created < ?').run(beforeIso)
     },
     orders: {
-      all: () => db.prepare('SELECT id, userId, created, data FROM orders ORDER BY created DESC').all().map(r => JSON.parse(r.data)),
+      all: () => db.prepare('SELECT id, userId, created, data FROM orders ORDER BY created DESC').all().map(r => parseJson(r.data, r.id)),
       byId: id => {
         const r = db.prepare('SELECT data FROM orders WHERE id = ?').get(id);
-        return r ? JSON.parse(r.data) : null;
+        return r ? parseJson(r.data, id) : null;
       },
       count: () => db.prepare('SELECT COUNT(*) AS c FROM orders').get().c,
       countByUser: userId => db.prepare('SELECT COUNT(*) AS c FROM orders WHERE userId = ?').get(userId).c,
@@ -78,7 +90,7 @@ function openDb(dbFile) {
     rabatter: {
       get: userId => {
         const r = db.prepare('SELECT perBrand FROM rabatter WHERE userId = ?').get(userId);
-        return r ? JSON.parse(r.perBrand) : {};
+        return r ? parseJson(r.perBrand, 'rabatter:' + userId) : {};
       },
       set: (userId, perBrand) => db.prepare('INSERT INTO rabatter (userId, perBrand) VALUES (?, ?) ON CONFLICT(userId) DO UPDATE SET perBrand = excluded.perBrand').run(userId, JSON.stringify(perBrand)),
       all: () => db.prepare('SELECT userId, perBrand FROM rabatter').all().map(r => ({ userId: r.userId, perBrand: JSON.parse(r.perBrand) }))

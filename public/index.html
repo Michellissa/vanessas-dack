@@ -343,10 +343,10 @@ function finderGo() {
 
 fetch('/api/filter-values?type=dack').then(r => r.json()).then(d => {
   document.getElementById('count-dack').textContent = d.inches.reduce((s, i) => s + i.count, 0).toLocaleString('sv-SE');
-});
+}).catch(() => {});
 fetch('/api/filter-values?type=falgar').then(r => r.json()).then(d => {
   document.getElementById('count-falgar').textContent = d.inches.reduce((s, i) => s + i.count, 0).toLocaleString('sv-SE');
-});
+}).catch(() => {});
 
 async function loadFeatured() {
   const res = await fetch('/api/products?stock=1&has_image=1&sort=price_asc&page=1');

@@ -860,13 +860,13 @@ async function handle(req, res) {
         }
         const total = items.reduce((s, i) => s + (i.discountedPrice || Number(i.price)) * (i.qty || 1), 0);
         const saved = {
+          ...order,
           id,
           created: now.toISOString(),
           status: 'ny',
           userId: user ? user.id : null,
           paid: order.payment && order.payment.method ? !/faktura/i.test(order.payment.method) : false,
           discount: Object.keys(perBrand).length && discountTotal > 0 ? { perBrand, discountTotal } : null,
-          ...order,
           items,
           total
         };

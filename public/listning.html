@@ -77,7 +77,6 @@
 <script>
 const params = new URLSearchParams(location.search);
 const TYPE = location.pathname.startsWith('/falgar') ? 'falgar' : (location.pathname === '/sok' ? '' : (params.get('type') || 'dack'));
-const IS_SEARCH = location.pathname === '/sok';
 const TITLE = TYPE === 'falgar' ? 'Fälgar' : 'Däck';
 
 document.title = TITLE + ' – Vanessas Däck';
@@ -161,13 +160,13 @@ async function loadProducts(page) {
     pager.innerHTML = '';
     return;
   }
-  let html = '<button onclick="loadProducts(1)" ' + (d.page === 1 ? 'disabled' : '') + '>«</button>';
+  let html = '<button aria-label="Föregående sida" onclick="loadProducts(1)" ' + (d.page === 1 ? 'disabled' : '') + '>«</button>';
   const start = Math.max(1, d.page - 2);
   const end = Math.min(d.pages, d.page + 2);
   for (let i = start; i <= end; i++) {
-    html += `<button onclick="loadProducts(${i})" class="${i === d.page ? 'active' : ''}">${i}</button>`;
+    html += `<button aria-label="Sida ${i}" onclick="loadProducts(${i})" class="${i === d.page ? 'active' : ''}">${i}</button>`;
   }
-  html += '<button onclick="loadProducts(' + d.pages + ')" ' + (d.page === d.pages ? 'disabled' : '') + '>»</button>';
+  html += '<button aria-label="Nästa sida" onclick="loadProducts(' + d.pages + ')" ' + (d.page === d.pages ? 'disabled' : '') + '>»</button>';
   pager.innerHTML = html;
 }
 

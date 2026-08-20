@@ -66,9 +66,6 @@ const APP = {
     d.textContent = s == null ? '' : String(s);
     return d.innerHTML;
   },
-  qs(params) {
-    return new URLSearchParams(params).toString();
-  },
   money(n) {
     return n ? n.toLocaleString('sv-SE') + ' kr' : '';
   },
@@ -194,7 +191,7 @@ function injectHeader(active) {
         ${NAV_ITEMS.map(([href, label]) => `<a href="${href}" class="${active === href || (active === '/dack' && href === '/dack') || (active === '/falgar' && href === '/falgar') ? 'active' : ''}">${label}</a>`).join('')}
       </nav>
       <div class="header-actions">
-        <button class="icon-btn" title="Sök" onclick="focusSearch()">
+        <button class="icon-btn" aria-label="Sök" title="Sök" onclick="focusSearch()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><path d="M21 21l-4.35-4.35"></path></svg>
         </button>
         <a class="account-link" id="account-link" href="/logga-in">Logga in</a>

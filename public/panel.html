@@ -239,7 +239,7 @@ async function loadOrders() {
     }
     box.innerHTML = orders.map(o => {
       const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} × ${esc(i.manufacturer || '')} ${esc(i.name)}${i.discountPct ? ` <span class="badge b-green">${i.discountPct}% rabatt</span>` : ''}</span><span>${((i.discountedPrice || i.price) * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
-      const customer = o.customer.name || (o.customer.firstname + ' ' + o.customer.lastname);
+      const customer = o.customer.name || [o.customer.firstname, o.customer.lastname].filter(Boolean).join(' ') || 'Okänd kund';
       const statusBadge = o.status === 'handled'
         ? '<span class="st-badge st-handled">Behandlad</span>'
         : '<span class="st-badge st-ny">Ny</span>';
@@ -502,15 +502,15 @@ async function load() {
       : '<span class="badge b-red">Ej i lager</span>';
     const tr = document.createElement('tr');
     tr.innerHTML =
-      '<td>' + (p.supplier_reference || p.id) + '</td>' +
+      '<td>' + esc(p.supplier_reference || p.id) + '</td>' +
       '<td>' + (p.type === 'falgar' ? 'Fälg' : 'Däck') + '</td>' +
       '<td>' + esc(p.manufacturer) + '</td>' +
       '<td class="wrap">' + esc(p.name) + '</td>' +
       '<td class="wrap">' + esc(p.info || '') + '</td>' +
       '<td class="price">' + (p.price ? p.price.toLocaleString('sv-SE') + ' kr' : '') + '</td>' +
       '<td>' + badge + '</td>' +
-      '<td>' + p.external_stock + '</td>' +
-      '<td>' + (p.external_delivery || '–') + '</td>';
+      '<td>' + (p.external_stock || 0) + '</td>' +
+      '<td>' + esc(p.external_delivery || '–') + '</td>';
     tbody.appendChild(tr);
   }
 }

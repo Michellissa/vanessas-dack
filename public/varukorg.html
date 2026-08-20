@@ -75,9 +75,9 @@ function render() {
         <div class="dims">${APP.esc(i.info || '')}</div>
       </div>
       <div class="qty-wrap">
-        <button onclick="APP.updateCartQty(${i.id}, ${i.qty - 1}); render();">−</button>
+<button aria-label="Minska antal" onclick="APP.updateCartQty(${i.id}, ${i.qty - 1}); render();">−</button>
         <span>${i.qty}</span>
-        <button onclick="APP.updateCartQty(${i.id}, ${i.qty + 1}); render();">+</button>
+        <button aria-label="Öka antal" onclick="APP.updateCartQty(${i.id}, ${i.qty + 1}); render();">+</button>
       </div>
       <div class="line-price">${APP.money((i.price || 0) * i.qty)}</div>
       <button class="remove" onclick="APP.removeFromCart(${i.id}); render();">Ta bort</button>

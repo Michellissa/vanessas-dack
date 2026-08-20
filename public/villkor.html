@@ -153,8 +153,9 @@ const tocItems = [
   ['Priser', '#p1'], ['Kvitton och fakturor', '#p2'], ['Beställning', '#p3'], ['Leveranstider', '#p4'], ['Leveranser', '#p5'], ['Felaktig leverans', '#p6'], ['Tillämplighet', '#p7'], ['Förändring av order', '#p8'], ['Förbehåll', '#p9'], ['Avbeställning', '#p10'], ['Reklamationer', '#p11'], ['Ångerrätt', '#p12'], ['Postförskottspaket', '#p13'], ['Returer', '#p14'], ['Garantier', '#p15'], ['Transportskador', '#p16'], ['Under 18 år', '#p17'], ['Dataskydd', '#p18'], ['Support', '#p19'], ['Helbilsgodkännande', '#p20'], ['Montering och skötsel', '#p21'], ['Tvist', '#p22'], ['Force Majeure', '#p23'], ['Däckhotell', '#dackhotell']
 ];
 document.getElementById('toc').innerHTML = tocItems.map(([label, href]) => `<a href="${href}">${label}</a>`).join('');
-document.querySelectorAll('.terms-block').forEach(block => {
-  block.querySelectorAll('h3').forEach((h, i) => h.id = 'p' + (i + 1));
+document.querySelectorAll('.terms-block').forEach((block, bi) => {
+  const prefix = bi === 0 ? '' : 'dh-';
+  block.querySelectorAll('h3').forEach((h, i) => h.id = prefix + 'p' + (i + 1));
 });
 document.querySelectorAll('.terms-block h2')[0].id = 'kopvillkor';
 document.querySelectorAll('.terms-block h2')[1].id = 'dackhotell';
