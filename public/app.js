@@ -145,7 +145,7 @@ const APP = {
     document.querySelectorAll('.reveal:not(.in)').forEach(el => this.revealObserver.observe(el));
   },
   initAccount: async function () {
-    const links = document.querySelectorAll('.account-link');
+    const links = document.querySelectorAll('.account-link, .mm-account');
     if (!links.length) return;
     try {
       const r = await fetch('/api/me');
@@ -238,6 +238,7 @@ function injectHeader(active) {
     mmAcc.addEventListener('click', () => document.getElementById('site-header').classList.remove('menu-open'));
   }
   APP.updateCartCount();
+  APP.initAccount();
   window.doSearch = () => {
     const mm = window.matchMedia('(max-width: 900px)').matches ? document.getElementById('mm-search') : null;
     const input = mm || document.getElementById('top-search');
