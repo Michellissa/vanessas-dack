@@ -172,6 +172,7 @@ const NAV_ITEMS = [
 function injectHeader(active) {
   const header = document.getElementById('site-header');
   if (!header) return;
+  header.classList.add('site');
   APP.getSettings().then(s => {
     const el = document.getElementById('topbar-hours');
     if (el && s.openingHours) el.textContent = s.openingHours;

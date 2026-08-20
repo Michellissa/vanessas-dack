@@ -4,11 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logga in – Vanessas Däck</title>
-<link rel="stylesheet" href="/public/styles.css?v=8">
+<link rel="stylesheet" href="/public/styles.css?v=9">
 <link rel="icon" href="/public/logo.svg">
 </head>
 <body class="page account-page">
-<header id="site-header"></header>
+<header id="site-header" class="site"></header>
 <main class="container narrow">
   <h1>Logga in</h1>
   <p class="lead">Logga in för att se dina beställningar och komma snabbare i kassan.</p>
@@ -25,7 +25,7 @@
   <p class="muted" style="margin-top:16px">Har du inget konto? <a href="/skapa-konto">Skapa konto</a></p>
 </main>
 <footer id="site-footer"></footer>
-<script src="/public/app.js?v=8"></script>
+<script src="/public/app.js?v=9"></script>
 <script>
 const nextRaw = new URLSearchParams(location.search).get('next') || '/mina-sidor';
 const next = nextRaw.startsWith('/') && !nextRaw.startsWith('//') ? nextRaw : '/mina-sidor';
