@@ -73,7 +73,7 @@ const DEFAULT_SETTINGS = {
   openingHours: 'Öppet vardagar 9–17',
   heroTitle: 'Däck & fälgar som',
   heroHighlight: 'passar din bil',
-  heroSub: 'Hitta rätt däck och fälgar till rätt pris – med fraktfritt och professionell service.'
+  heroSub: 'Hitta rätt däck och fälgar till rätt pris – med professionell service.'
 };
 
 function getSettings() {

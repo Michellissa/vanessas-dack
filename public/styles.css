@@ -196,6 +196,7 @@ header.site.menu-open .mobile-menu { display: block; }
 }
 .mobile-menu a:hover, .mobile-menu a:active { color: #fff; background: rgba(255, 255, 255, .06); }
 .mobile-menu .mm-account { color: var(--accent-glow); }
+.mobile-menu .mm-account.mm-admin { border-top: 1px solid rgba(255, 255, 255, .06); }
 .mobile-menu .mm-search { padding: 16px 20px 4px; }
 .mobile-menu .mm-search .searchbox { min-width: 0; box-shadow: none; }
 

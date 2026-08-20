@@ -73,7 +73,9 @@
     <div class="sub" id="statusText">Laddar...</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
+    <span class="status" id="adminName"></span>
     <button id="syncBtn" onclick="triggerSync()">Uppdatera lager</button>
+    <button class="sec" onclick="doLogout()">Logga ut</button>
   </div>
 </header>
 <div class="tabs">
@@ -540,6 +542,10 @@ async function triggerSync() {
 }
 
 async function refreshStatus() {
+  try {
+    const me = await (await fetch('/api/me')).json();
+    document.getElementById('adminName').textContent = me.user.name;
+  } catch (e) {}
   const r = await fetch('/api/status');
   const s = await r.json();
   const el = document.getElementById('statusText');
@@ -549,6 +555,11 @@ async function refreshStatus() {
   } else {
     el.textContent = 'Senast synkad: ' + (s.lastSync ? new Date(s.lastSync).toLocaleString('sv-SE') : 'aldrig') + ' · ' + s.productCount + ' produkter';
   }
+}
+
+async function doLogout() {
+  await fetch('/api/logout', { method: 'POST' });
+  location.href = '/';
 }
 
 load();

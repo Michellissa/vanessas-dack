@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Varukorg – Vanessas Däck</title>
-<link rel="stylesheet" href="/public/styles.css?v=9">
+<link rel="stylesheet" href="/public/styles.css?v=10">
 <link rel="icon" href="/public/logo.svg">
 <style>
   .cart-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; padding: 28px 0; }
@@ -51,7 +51,7 @@
 
 <footer id="site-footer"></footer>
 
-<script src="/public/app.js?v=9"></script>
+<script src="/public/app.js?v=10"></script>
 <script>
 injectHeader('/varukorg');
 
@@ -89,8 +89,7 @@ function render() {
     <div class="sum-row"><span>Antal artiklar</span><span>${APP.cartCount()}</span></div>
     <div class="sum-row"><span>Frakt</span><span>0 kr</span></div>
     <div class="sum-row total"><span>Att betala</span><span>${APP.money(total)}</span></div>
-    <a class="btn primary" href="/kassan">Gå till kassan</a>
-    <div class="free"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"></path><path d="M16 8h4l3 3v5h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>Alltid fraktfritt</div>`;
+<a class="btn primary" href="/kassan">Gå till kassan</a>`;
 }
 
 render();

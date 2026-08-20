@@ -156,6 +156,24 @@ const APP = {
           l.href = '/mina-sidor';
           l.title = 'Logga ut';
         });
+        if (d.user.role === 'admin') {
+          const adminLink = document.createElement('a');
+          adminLink.href = '/panel';
+          adminLink.textContent = 'Adminpanel';
+          adminLink.className = 'account-link';
+          adminLink.style.marginLeft = '12px';
+          const cart = document.querySelector('.cart-link');
+          if (cart && cart.parentNode) cart.parentNode.insertBefore(adminLink, cart);
+          const mmAcc = document.querySelector('.mm-account');
+          if (mmAcc && mmAcc.parentNode) {
+            const mmAdmin = document.createElement('a');
+            mmAdmin.href = '/panel';
+            mmAdmin.textContent = 'Adminpanel';
+            mmAdmin.className = 'mm-account mm-admin';
+            mmAdmin.style.marginTop = '6px';
+            mmAcc.parentNode.insertBefore(mmAdmin, mmAcc.nextSibling);
+          }
+        }
       }
     } catch (e) {}
   }
@@ -180,7 +198,7 @@ function injectHeader(active) {
   header.innerHTML = `
     <div class="topbar">
       <div class="container">
-        <span>Alltid fraktfritt! Däck och fälgar till bra priser</span>
+        <span>Däck och fälgar till bra priser</span>
         <span id="topbar-hours">Öppet vardagar 9–17</span>
       </div>
     </div>
@@ -290,7 +308,7 @@ function injectFooter() {
         <div class="cols">
           <div class="col-brand">
             <h4>Vanessas Däck</h4>
-            <p>Din lokala däck- och fälgbutik i Jordbro. Stort sortiment, professionell montering och alltid fraktfritt – för privatpersoner och företag.</p>
+            <p>Din lokala däck- och fälgbutik i Jordbro. Stort sortiment, professionell montering – för privatpersoner och företag.</p>
             <div class="social">
               <a href="https://www.facebook.com/Vanessasdack.se" target="_blank" rel="noopener" title="Facebook"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg></a>
               <a href="https://se.trustpilot.com/review/www.vanessasdack.se" target="_blank" rel="noopener" title="Trustpilot"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"></path></svg></a>
@@ -322,7 +340,6 @@ function injectFooter() {
         </div>
         <div class="bottom">
           <span>© ${new Date().getFullYear()} Vanessas Däck AB · Org. nr 556825-1663</span>
-          <span>Alltid fraktfritt!</span>
         </div>
       </div>`;
   });

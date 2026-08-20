@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const { spawn } = require('child_process');
 
 const PORT = process.env.PORT || 3000;
-const { getPanelPassword } = require('./config');
 const { openDb } = require('./db');
 const DATA_DIR = path.join(__dirname, 'data');
 const PRODUCTS_FILE = path.join(DATA_DIR, 'products.json');
@@ -13,8 +12,6 @@ const META_FILE = path.join(DATA_DIR, 'meta.json');
 const IMG_DIR = path.join(DATA_DIR, 'images');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const PER_PAGE = 60;
-const PANEL_PASSWORD = getPanelPassword();
-const PANEL_HASH = crypto.createHash('sha256').update(PANEL_PASSWORD + ':vd').digest('hex');
 const db = openDb(path.join(DATA_DIR, 'vanessas.db'));
 
 const MIME = {
@@ -72,7 +69,7 @@ const DEFAULT_SETTINGS = {
   openingHours: 'Öppet vardagar 9–17',
   heroTitle: 'Däck & fälgar som',
   heroHighlight: 'passar din bil',
-  heroSub: 'Hitta rätt däck och fälgar till rätt pris – med fraktfritt och professionell service.'
+  heroSub: 'Hitta rätt däck och fälgar till rätt pris – med professionell service.'
 };
 
 function getSettings() {
@@ -123,9 +120,8 @@ function getIp(req) {
 }
 
 function isAuthed(req) {
-  const cookie = (req.headers.cookie || '').split(';').map(c => c.trim());
-  const v = cookie.find(c => c.startsWith('vd_panel='));
-  return v ? v.slice('vd_panel='.length) === PANEL_HASH : false;
+  const user = currentUser(req);
+  return user && user.role === 'admin';
 }
 
 function currentUser(req) {
@@ -177,54 +173,10 @@ function registerFail(ip) {
 }
 
 function sendLogin(res, next) {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  res.end(LOGIN_HTML.replace(/__NEXT__/g, next));
+  const loginUrl = '/logga-in?next=' + encodeURIComponent(next);
+  res.writeHead(302, { 'Location': loginUrl });
+  res.end();
 }
-
-const LOGIN_HTML = `<!DOCTYPE html>
-<html lang="sv">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Inloggning – Vanessas Däck</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1e4456; color: #1e4456; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-  .box { background: #fff; border-radius: 14px; padding: 40px 36px; width: 340px; max-width: 92vw; box-shadow: 0 16px 48px rgba(0,0,0,.35); }
-  .box h1 { font-size: 20px; margin-bottom: 6px; }
-  .box p { font-size: 13px; color: #5f7a88; margin-bottom: 18px; }
-  input { width: 100%; padding: 12px 14px; border: 1px solid #e1e8ee; border-radius: 9px; font-size: 15px; outline: 0; margin-bottom: 12px; }
-  input:focus { border-color: #1e4456; }
-  button { width: 100%; padding: 12px; border: 0; border-radius: 9px; background: #f6921e; color: #fff; font-size: 15px; font-weight: 700; cursor: pointer; }
-  .err { color: #c0392b; font-size: 13px; margin-bottom: 10px; display: none; }
-</style>
-</head>
-<body>
-<div class="box">
-  <h1>Vanessas Däck</h1>
-  <p>Detta område är endast för personal. Ange lösenord.</p>
-  <div class="err" id="err">Fel lösenord eller för många försök. Vänta 15 minuter.</div>
-  <input type="password" id="pw" placeholder="Lösenord" onkeydown="if(event.key==='Enter')go()">
-  <button onclick="go()">Logga in</button>
-</div>
-<script>
-async function go() {
-  const pw = document.getElementById('pw').value;
-  const r = await fetch('/api/panel-login', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ password: pw, next: '__NEXT__' })
-  });
-  const d = await r.json();
-  if (d.success) {
-    location.href = d.next || '/panel';
-  } else {
-    document.getElementById('err').style.display = 'block';
-  }
-}
-</script>
-</body>
-</html>`;
 
 function tyreInfo(p) {
   return p.info ||
@@ -339,7 +291,9 @@ const server = http.createServer(async (req, res) => {
       return;
     }
     if (!isAuthed(req)) {
-      sendLogin(res, url.pathname);
+      const loginUrl = '/logga-in?next=' + encodeURIComponent(url.pathname);
+      res.writeHead(302, { 'Location': loginUrl });
+      res.end();
       return;
     }
     if (serveFile(res, path.join(PUBLIC_DIR, url.pathname === '/panel' ? 'panel.html' : 'gallery.html'))) return;
@@ -633,35 +587,6 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  if (url.pathname === '/api/panel-login' && req.method === 'POST') {
-    const ip = getIp(req);
-    if (rateLimited(ip)) {
-      sendJson(res, 429, { success: false, error: 'För många försök, vänta 15 minuter' });
-      return;
-    }
-    let body = '';
-    req.on('data', chunk => (body += chunk));
-    req.on('end', () => {
-      try {
-        const d = JSON.parse(body);
-        if (d.password === PANEL_PASSWORD) {
-          loginAttempts.delete(ip);
-          res.writeHead(200, {
-            'Content-Type': 'application/json; charset=utf-8',
-            'Set-Cookie': `vd_panel=${PANEL_HASH}; Path=/; Max-Age=2592000; SameSite=Lax`
-          });
-          res.end(JSON.stringify({ success: true, next: d.next || '/panel' }));
-        } else {
-          registerFail(ip);
-          sendJson(res, 401, { success: false, error: 'Fel lösenord' });
-        }
-      } catch {
-        sendJson(res, 400, { error: 'Ogiltig data' });
-      }
-    });
-    return;
-  }
-
   if (url.pathname === '/api/register' && req.method === 'POST') {
     const ip = getIp(req);
     if (rateLimited(ip)) {
@@ -696,7 +621,7 @@ const server = http.createServer(async (req, res) => {
           'Content-Type': 'application/json; charset=utf-8',
           'Set-Cookie': `vd_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`
         });
-        res.end(JSON.stringify({ success: true, user: { id: user.id, name: user.name, email: user.email } }));
+        res.end(JSON.stringify({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } }));
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
       }
@@ -727,7 +652,7 @@ const server = http.createServer(async (req, res) => {
           'Content-Type': 'application/json; charset=utf-8',
           'Set-Cookie': `vd_session=${token}; Path=/; Max-Age=2592000; SameSite=Lax`
         });
-        res.end(JSON.stringify({ success: true, user: { id: user.id, name: user.name, email: user.email } }));
+        res.end(JSON.stringify({ success: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } }));
       } catch {
         sendJson(res, 400, { error: 'Ogiltig data' });
       }
@@ -756,7 +681,7 @@ const server = http.createServer(async (req, res) => {
       sendJson(res, 401, { error: 'Ej inloggad' });
       return;
     }
-    sendJson(res, 200, { user: { id: user.id, name: user.name, email: user.email, discount: getDiscountFor(user.id) } });
+    sendJson(res, 200, { user: { id: user.id, name: user.name, email: user.email, role: user.role, discount: getDiscountFor(user.id) } });
     return;
   }
 

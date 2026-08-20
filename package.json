@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "sync": "node sync.js",
+    "make-admin": "node make-admin.js",
     "build": "node sync.js && node download-images.js",
     "start": "node server.js"
   },

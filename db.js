@@ -19,6 +19,7 @@ function openDb(dbFile) {
       name TEXT NOT NULL,
       email TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL,
+      role TEXT NOT NULL DEFAULT 'user',
       created TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS sessions (
@@ -51,16 +52,22 @@ function openDb(dbFile) {
     CREATE INDEX IF NOT EXISTS idx_sessions_created ON sessions(created);
   `);
 
+  const userCols = db.prepare('PRAGMA table_info(users)').all().map(c => c.name);
+  if (!userCols.includes('role')) {
+    db.exec("ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'");
+  }
+
   return {
     users: {
       all: () => db.prepare('SELECT * FROM users ORDER BY id').all(),
       byId: id => db.prepare('SELECT * FROM users WHERE id = ?').get(id) || null,
       byEmail: email => db.prepare('SELECT * FROM users WHERE email = ?').get(String(email).toLowerCase().trim()) || null,
       insert: u => {
-        const info = db.prepare('INSERT INTO users (name, email, password, created) VALUES (?, ?, ?, ?)')
-          .run(u.name, u.email, u.password, u.created);
-        return { id: info.lastInsertRowid, ...u };
-      }
+        const info = db.prepare('INSERT INTO users (name, email, password, role, created) VALUES (?, ?, ?, ?, ?)')
+          .run(u.name, u.email, u.password, u.role || 'user', u.created);
+        return { id: info.lastInsertRowid, ...u, role: u.role || 'user' };
+      },
+      setRole: (id, role) => db.prepare('UPDATE users SET role = ? WHERE id = ?').run(role, id)
     },
     sessions: {
       insert: (token, userId, created) => db.prepare('INSERT INTO sessions (token, userId, created) VALUES (?, ?, ?)').run(token, userId, created),
