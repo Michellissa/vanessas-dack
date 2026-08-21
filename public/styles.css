@@ -810,6 +810,16 @@ footer.site .bottom { border-top: 1px solid rgba(255, 255, 255, .1); padding-top
 @media (max-width: 760px) {
   .guide-body select { flex: 1 1 45%; }
   .cat-tabs .tab { font-size: 14px; padding: 12px 10px; }
+  .g-dims { gap: 6px; }
+  .g-dim { font-size: 12.5px; padding: 6px 11px; }
+}
+
+@media (max-width: 560px) {
+  .g-dims { gap: 6px; margin-top: 6px; }
+  .g-dims-label { font-size: 11.5px; }
+  .g-dim { font-size: 12px; padding: 6px 10px; gap: 5px; }
+  .g-dim .cnt { font-size: 10.5px; }
+  .g-dim .orig { font-size: 9.5px; padding: 1px 5px; }
 }
 
 /* ============ KONTO / INFO-SIDOR ============ */
