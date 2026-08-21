@@ -6,7 +6,7 @@
 <title id="pageTitle">Vanessas Däck</title>
 <meta name="description" content="Köp däck och fälgar online – stort sortiment till bra priser.">
 <meta property="og:type" content="website">
-<link rel="stylesheet" href="/public/styles.css?v=10">
+<link rel="stylesheet" href="/public/styles.css?v=11">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
   </div>
 
   <div class="layout">
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebar">
       <h3>Filtrera</h3>
       <div class="group">
         <label class="g-title" style="display:flex;align-items:center;gap:8px;font-weight:700;margin-bottom:0">
@@ -56,10 +56,15 @@
       <div id="filters"><p class="muted">Laddar filter...</p></div>
       <button class="btn dark" style="width:100%" onclick="resetFilters()">Rensa filter</button>
     </aside>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
 
     <div>
       <div class="chip-row" id="chip-row"></div>
       <div class="results-top">
+        <button class="filter-toggle" id="filterToggle" aria-label="Visa filter" onclick="toggleSidebar()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+          <span>Filter</span>
+        </button>
         <span class="total" id="totalText">Laddar...</span>
         <select id="sort" onchange="reload(1)">
           <option value="">Sortering: Relevans</option>
@@ -80,7 +85,7 @@
 
 <footer id="site-footer"></footer>
 
-<script src="/public/app.js?v=10"></script>
+<script src="/public/app.js?v=11"></script>
 <script>
 const params = new URLSearchParams(location.search);
 const TYPE = location.pathname.startsWith('/falgar') ? 'falgar' : (location.pathname === '/sok' ? '' : (params.get('type') || 'dack'));
@@ -438,6 +443,20 @@ async function init() {
   }
   if (!applied) reload(1);
 }
+
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebarOverlay');
+  const isOpen = sidebar.classList.toggle('open');
+  overlay.classList.toggle('open', isOpen);
+  document.body.style.overflow = isOpen ? 'hidden' : '';
+}
+function closeSidebar() {
+  document.getElementById('sidebar').classList.remove('open');
+  document.getElementById('sidebarOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 init();
 </script>
 </body>

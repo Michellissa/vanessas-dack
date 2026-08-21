@@ -1,10 +1,10 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Varukorg â€“ Vanessas DÃ¤ck</title>
-<link rel="stylesheet" href="/public/styles.css?v=10">
+<title>Varukorg – Vanessas Däck</title>
+<link rel="stylesheet" href="/public/styles.css?v=11">
 <link rel="icon" href="/public/logo.svg">
 <style>
   .cart-layout { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: start; padding: 28px 0; }
@@ -42,7 +42,7 @@
 <header id="site-header" class="site"></header>
 
 <div class="container">
-  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">â€º</span><span>Varukorg</span></div>
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">›</span><span>Varukorg</span></div>
   <div class="cart-layout">
     <div class="cart-items" id="items"><div class="spinner"></div></div>
     <aside class="cart-summary" id="summary"></aside>
@@ -51,7 +51,7 @@
 
 <footer id="site-footer"></footer>
 
-<script src="/public/app.js?v=10"></script>
+<script src="/public/app.js?v=11"></script>
 <script>
 injectHeader('/varukorg');
 
@@ -61,7 +61,7 @@ function render() {
   const summary = document.getElementById('summary');
 
   if (!cart.length) {
-    items.innerHTML = '<div class="empty" style="padding:60px 20px"><div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></div><h3>Din varukorg Ã¤r tom</h3><p style="margin-top:8px">Hittade du inget? Utforska vÃ¥rt sortiment.</p><div style="margin-top:18px"><a class="btn dark" href="/dack">Till dÃ¤ck</a> <a class="btn dark" href="/falgar">Till fÃ¤lgar</a></div></div>';
+    items.innerHTML = '<div class="empty" style="padding:60px 20px"><div class="icon"><svg viewBox="0 0 24 24" width="44" height="44" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg></div><h3>Din varukorg är tom</h3><p style="margin-top:8px">Hittade du inget? Utforska vårt sortiment.</p><div style="margin-top:18px"><a class="btn dark" href="/dack">Till däck</a> <a class="btn dark" href="/falgar">Till fälgar</a></div></div>';
     summary.innerHTML = '';
     return;
   }
@@ -75,9 +75,9 @@ function render() {
         <div class="dims">${APP.esc(i.info || '')}</div>
       </div>
       <div class="qty-wrap">
-<button aria-label="Minska antal" onclick="APP.updateCartQty(${i.id}, ${i.qty - 1}); render();">âˆ’</button>
+<button aria-label="Minska antal" onclick="APP.updateCartQty(${i.id}, ${i.qty - 1}); render();">-</button>
         <span>${i.qty}</span>
-        <button aria-label="Ã–ka antal" onclick="APP.updateCartQty(${i.id}, ${i.qty + 1}); render();">+</button>
+        <button aria-label="Öka antal" onclick="APP.updateCartQty(${i.id}, ${i.qty + 1}); render();">+</button>
       </div>
       <div class="line-price">${APP.money((i.price || 0) * i.qty)}</div>
       <button class="remove" onclick="APP.removeFromCart(${i.id}); render();">Ta bort</button>
@@ -89,10 +89,11 @@ function render() {
     <div class="sum-row"><span>Antal artiklar</span><span>${APP.cartCount()}</span></div>
     <div class="sum-row"><span>Frakt</span><span>0 kr</span></div>
     <div class="sum-row total"><span>Att betala</span><span>${APP.money(total)}</span></div>
-<a class="btn primary" href="/kassan">GÃ¥ till kassan</a>`;
+<a class="btn primary" href="/kassan">Gå till kassan</a>`;
 }
 
 render();
 </script>
 </body>
 </html>
+

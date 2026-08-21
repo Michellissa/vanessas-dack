@@ -1,9 +1,9 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vanessas DÃ¤ck â€“ Adminpanel</title>
+<title>Vanessas Däck – Adminpanel</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #0e1524; }
@@ -64,12 +64,38 @@
   .rabatt-row .pct { color: #888; font-size: 12px; }
   .save-note { color: #1c7a2d; font-weight: 600; font-size: 13px; margin-left: 10px; }
   .cars-table { margin-top: 12px; }
+  @media (max-width: 760px) {
+    header { flex-direction: column; align-items: flex-start; padding: 14px 16px; }
+    header h1 { font-size: 18px; }
+    .toolbar { padding: 12px 16px; }
+    .tabs { padding: 10px 16px; overflow-x: auto; flex-wrap: nowrap; }
+    .tabs button { white-space: nowrap; padding: 8px 12px; font-size: 13px; }
+    .panel-box { margin: 10px 16px; padding: 14px 14px; }
+    .form-row .f { flex: 1 1 100%; }
+    .form-row .f input, .form-row .f select, .form-row .f textarea { width: 100% !important; max-width: 100%; }
+    .panel-box input[type=text] { max-width: 100%; }
+    .panel-box input[type=number] { max-width: 100%; }
+    .rabatt-row { flex-wrap: wrap; gap: 8px; }
+    .rabatt-row .mfg { min-width: 140px; }
+    .order-card { margin: 10px 16px; }
+    .order-filters { padding: 10px 16px; flex-wrap: wrap; }
+    .order-filters button { flex: 1 1 auto; min-width: 80px; text-align: center; }
+    .discountEditor .form-row .f { flex: 1 1 100%; }
+  }
+  @media (max-width: 480px) {
+    .container { padding: 0 12px; }
+    header { padding: 12px 12px; }
+    .toolbar { padding: 10px 12px; }
+    .tabs { padding: 8px 12px; }
+    .panel-box { margin: 8px 12px; padding: 12px; }
+    .form-row { gap: 8px; }
+  }
 </style>
 </head>
 <body>
 <header>
   <div>
-    <h1>Vanessas DÃ¤ck â€“ Adminpanel</h1>
+    <h1>Vanessas Däck – Adminpanel</h1>
     <div class="sub" id="statusText">Laddar...</div>
   </div>
   <div style="display:flex;gap:10px;align-items:center">
@@ -80,8 +106,8 @@
 </header>
 <div class="tabs">
   <button id="tab-stock" class="active" onclick="showView('stock')">Lagersaldo</button>
-  <button id="tab-orders" onclick="showView('orders')">BestÃ¤llningar</button>
-  <button id="tab-users" onclick="showView('users')">AnvÃ¤ndare</button>
+  <button id="tab-orders" onclick="showView('orders')">Beställningar</button>
+  <button id="tab-users" onclick="showView('users')">Användare</button>
   <button id="tab-cars" onclick="showView('cars')">Bilar</button>
   <button id="tab-discounts" onclick="showView('discounts')">Rabatter</button>
   <button id="tab-settings" onclick="showView('settings')">Texter</button>
@@ -89,7 +115,7 @@
 
 <div id="stockView" class="view" style="display:block">
 <div class="toolbar">
-  <input type="text" id="search" placeholder="SÃ¶k pÃ¥ mÃ¤rke, namn, artikelnummer eller ID..." oninput="onSearch()">
+  <input type="text" id="search" placeholder="Sök på märke, namn, artikelnummer eller ID..." oninput="onSearch()">
   <label><input type="checkbox" id="stockOnly" onchange="onSearch()"> Endast artiklar i lager</label>
   <span id="resultCount" class="status"></span>
 </div>
@@ -97,16 +123,16 @@
 <table>
   <thead>
     <tr>
-      <th>Art.nr</th><th>Typ</th><th>MÃ¤rke</th><th>Modell</th><th class="wrap">Dimension</th><th>Pris</th><th>Internt lager</th><th>Externt lager</th><th>Leveranstid</th>
+      <th>Art.nr</th><th>Typ</th><th>Märke</th><th>Modell</th><th class="wrap">Dimension</th><th>Pris</th><th>Internt lager</th><th>Externt lager</th><th>Leveranstid</th>
     </tr>
   </thead>
   <tbody id="rows"></tbody>
 </table>
 </div>
 <div class="pager">
-  <button id="prevBtn" onclick="changePage(-1)">FÃ¶regÃ¥ende</button>
+  <button id="prevBtn" onclick="changePage(-1)">Föregående</button>
   <span id="pageInfo" class="status"></span>
-  <button id="nextBtn" onclick="changePage(1)">NÃ¤sta</button>
+  <button id="nextBtn" onclick="changePage(1)">Nästa</button>
 </div>
 </div>
 
@@ -117,12 +143,12 @@
     <button id="of-handled" onclick="orderFilter('handled')">Behandlade</button>
     <button id="of-unpaid" onclick="orderFilter('unpaid')">Obetalda</button>
   </div>
-  <div id="ordersList" class="status">Laddar bestÃ¤llningar...</div>
+  <div id="ordersList" class="status">Laddar beställningar...</div>
 </div>
 
 <div id="usersView" class="view">
   <div class="panel-box">
-    <h3>Registrerade anvÃ¤ndare</h3>
+    <h3>Registrerade användare</h3>
     <div class="wrap-all">
     <table>
       <thead><tr><th>Namn</th><th>E-post</th><th>Skapad</th><th>Antal ordrar</th></tr></thead>
@@ -134,16 +160,16 @@
 
 <div id="carsView" class="view">
   <div class="panel-box">
-    <h3>LÃ¤gg till bil i bilfiltret</h3>
+    <h3>Lägg till bil i bilfiltret</h3>
     <div class="form-row">
-      <div class="f"><label>MÃ¤rke</label><input type="text" id="car-brand" placeholder="Volvo" list="brand-list"></div>
+      <div class="f"><label>Märke</label><input type="text" id="car-brand" placeholder="Volvo" list="brand-list"></div>
       <div class="f"><label>Modell</label><input type="text" id="car-model" placeholder="V70"></div>
-      <div class="f"><label>Ã…rsmodeller (kommaseparerat, valfritt)</label><input type="text" id="car-years" placeholder="2010, 2011, 2012" style="width:220px"></div>
-      <div class="f"><label>Dimension â€“ bredd (t.ex. 225)</label><input type="text" id="car-width" placeholder="225" style="width:90px"></div>
-      <div class="f"><label>Dimension â€“ profil (t.ex. 65)</label><input type="text" id="car-ratio" placeholder="65" style="width:90px"></div>
-      <div class="f"><label>Dimension â€“ tum (t.ex. 17)</label><input type="text" id="car-inch" placeholder="17" style="width:90px"></div>
+      <div class="f"><label>Årsmodeller (kommaseparerat, valfritt)</label><input type="text" id="car-years" placeholder="2010, 2011, 2012" style="width:220px"></div>
+      <div class="f"><label>Dimension – bredd (t.ex. 225)</label><input type="text" id="car-width" placeholder="225" style="width:90px"></div>
+      <div class="f"><label>Dimension – profil (t.ex. 65)</label><input type="text" id="car-ratio" placeholder="65" style="width:90px"></div>
+      <div class="f"><label>Dimension – tum (t.ex. 17)</label><input type="text" id="car-inch" placeholder="17" style="width:90px"></div>
       <div class="f"><label>Fler dimensioner (kommaseparerat)</label><input type="text" id="car-dims" placeholder="205/55 R16, 225/45 R17" style="width:220px"></div>
-      <button onclick="addCar()">LÃ¤gg till</button>
+      <button onclick="addCar()">Lägg till</button>
     </div>
     <datalist id="brand-list"></datalist>
   </div>
@@ -151,7 +177,7 @@
     <h3>Admin-lagda bilar</h3>
     <div class="wrap-all">
     <table class="cars-table">
-      <thead><tr><th>MÃ¤rke</th><th>Modell</th><th>Ã…rsmodeller</th><th>Dimension</th><th></th></tr></thead>
+      <thead><tr><th>Märke</th><th>Modell</th><th>Årsmodeller</th><th>Dimension</th><th></th></tr></thead>
       <tbody id="carRows"></tbody>
     </table>
     </div>
@@ -160,20 +186,20 @@
 
 <div id="discountsView" class="view">
   <div class="panel-box">
-    <h3>Rabatter per anvÃ¤ndare och mÃ¤rke</h3>
+    <h3>Rabatter per användare och märke</h3>
     <div class="form-row">
-      <div class="f"><label>AnvÃ¤ndare</label><select id="discount-user" onchange="loadDiscountEditor()"><option value="">VÃ¤lj anvÃ¤ndare...</option></select></div>
+      <div class="f"><label>Användare</label><select id="discount-user" onchange="loadDiscountEditor()"><option value="">Välj användare...</option></select></div>
     </div>
     <div id="discountEditor" style="display:none">
       <div id="discountRows"></div>
       <div class="form-row" style="margin-top:14px">
-        <div class="f"><label>LÃ¤gg till mÃ¤rke</label><select id="discount-add-mfg"><option value="">VÃ¤lj mÃ¤rke...</option></select></div>
+        <div class="f"><label>Lägg till märke</label><select id="discount-add-mfg"><option value="">Välj märke...</option></select></div>
         <div class="f"><label>Rabatt %</label><input type="number" id="discount-add-pct" min="1" max="100" value="10" style="width:80px"></div>
-        <button class="sec" onclick="addDiscountBrand()">LÃ¤gg till rabatt</button>
+        <button class="sec" onclick="addDiscountBrand()">Lägg till rabatt</button>
       </div>
       <div style="margin-top:14px;display:flex;align-items:center;gap:10px">
         <button onclick="saveDiscounts()">Spara rabatter</button>
-        <span class="save-note" id="discountSaved" style="display:none">Sparat âœ“</span>
+        <span class="save-note" id="discountSaved" style="display:none">Sparat ?</span>
       </div>
     </div>
   </div>
@@ -181,9 +207,9 @@
 
 <div id="settingsView" class="view">
   <div class="panel-box">
-    <h3>Texter och Ã¶ppettider</h3>
+    <h3>Texter och öppettider</h3>
     <div class="form-row">
-      <div class="f" style="flex:1;min-width:300px"><label>Ã–ppettider</label><input type="text" id="set-hours" style="width:100%"></div>
+      <div class="f" style="flex:1;min-width:300px"><label>Öppettider</label><input type="text" id="set-hours" style="width:100%"></div>
     </div>
     <div class="form-row">
       <div class="f" style="flex:1;min-width:300px"><label>Hero-rubrik (del 1)</label><input type="text" id="set-hero-title" style="width:100%"></div>
@@ -194,7 +220,7 @@
     </div>
     <div style="display:flex;align-items:center;gap:10px">
       <button onclick="saveSettings()">Spara texter</button>
-      <span class="save-note" id="settingsSaved" style="display:none">Sparat âœ“</span>
+      <span class="save-note" id="settingsSaved" style="display:none">Sparat ?</span>
     </div>
   </div>
 </div>
@@ -233,19 +259,19 @@ async function loadOrders() {
     const r = await fetch('/api/orders');
     const d = await r.json();
     if (!d.orders || !d.orders.length) {
-      box.innerHTML = '<div class="status">Inga bestÃ¤llningar.</div>';
+      box.innerHTML = '<div class="status">Inga beställningar.</div>';
       return;
     }
     let orders = d.orders;
     if (orderStatusFilter === 'unpaid') orders = orders.filter(o => !o.paid);
     else if (orderStatusFilter) orders = orders.filter(o => o.status === orderStatusFilter);
     if (!orders.length) {
-      box.innerHTML = '<div class="status">Inga bestÃ¤llningar med vald status.</div>';
+      box.innerHTML = '<div class="status">Inga beställningar med vald status.</div>';
       return;
     }
     box.innerHTML = orders.map(o => {
-      const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} Ã— ${esc(i.manufacturer || '')} ${esc(i.name)}${i.discountPct ? ` <span class="badge b-green">${i.discountPct}% rabatt</span>` : ''}</span><span>${((i.discountedPrice || i.price) * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
-      const customer = o.customer.name || [o.customer.firstname, o.customer.lastname].filter(Boolean).join(' ') || 'OkÃ¤nd kund';
+      const items = o.items.map(i => `<div class="oc-line"><span>${esc(i.qty)} × ${esc(i.manufacturer || '')} ${esc(i.name)}${i.discountPct ? ` <span class="badge b-green">${i.discountPct}% rabatt</span>` : ''}</span><span>${((i.discountedPrice || i.price) * i.qty).toLocaleString('sv-SE')} kr</span></div>`).join('');
+      const customer = o.customer.name || [o.customer.firstname, o.customer.lastname].filter(Boolean).join(' ') || 'Okänd kund';
       const statusBadge = o.status === 'handled'
         ? '<span class="st-badge st-handled">Behandlad</span>'
         : '<span class="st-badge st-ny">Ny</span>';
@@ -253,23 +279,23 @@ async function loadOrders() {
         ? '<span class="st-badge st-paid">Betald</span>'
         : '<span class="st-badge st-unpaid">Obetald (faktura)</span>';
       const action = o.status === 'handled'
-        ? `<button class="ok" onclick="setOrderStatus('${o.id}', 'ny')">Ã…terstÃ¤ll till ny</button>`
+        ? `<button class="ok" onclick="setOrderStatus('${o.id}', 'ny')">Återställ till ny</button>`
         : `<button class="ok" onclick="setOrderStatus('${o.id}', 'handled')">Markera som behandlad</button>`;
       const payAction = o.paid
         ? `<button class="pay" onclick="setOrderPaid('${o.id}', false)">Markera som obetald</button>`
         : `<button class="pay" onclick="setOrderPaid('${o.id}', true)">Markera som betald</button>`;
-      const customerInfo = o.userId ? `<div class="oc-line"><span class="l">Konto</span><span>Ja (anvÃ¤ndar-ID ${o.userId})</span></div>` : '';
+      const customerInfo = o.userId ? `<div class="oc-line"><span class="l">Konto</span><span>Ja (användar-ID ${o.userId})</span></div>` : '';
       const discountInfo = o.discount && o.discount.discountTotal
-        ? `<div class="oc-line"><span class="l">Rabatt</span><span>âˆ’ ${o.discount.discountTotal.toLocaleString('sv-SE')} kr</span></div>`
+        ? `<div class="oc-line"><span class="l">Rabatt</span><span>- ${o.discount.discountTotal.toLocaleString('sv-SE')} kr</span></div>`
         : '';
       return `<div class="order-card">
         <div class="oc-head"><span>${esc(o.id)}</span><span>${new Date(o.created).toLocaleString('sv-SE')} ${statusBadge} ${paidBadge}</span></div>
-        <div class="oc-line"><span class="l">Kund</span><span>${esc(customer)} Â· ${esc(o.customer.email)}${o.customer.phone ? ' Â· ' + esc(o.customer.phone) : ''}</span></div>
-        <div class="oc-line"><span class="l">Adress</span><span>${esc(o.customer.address)}, ${esc(o.customer.zip)} ${esc(o.customer.city)}${o.customer.ssn ? ' Â· Pnr ' + esc(o.customer.ssn) : ''}</span></div>
+        <div class="oc-line"><span class="l">Kund</span><span>${esc(customer)} · ${esc(o.customer.email)}${o.customer.phone ? ' · ' + esc(o.customer.phone) : ''}</span></div>
+        <div class="oc-line"><span class="l">Adress</span><span>${esc(o.customer.address)}, ${esc(o.customer.zip)} ${esc(o.customer.city)}${o.customer.ssn ? ' · Pnr ' + esc(o.customer.ssn) : ''}</span></div>
         ${o.customer.car ? `<div class="oc-line"><span class="l">Bil</span><span>${esc(o.customer.car)}</span></div>` : ''}
         ${o.customer.note ? `<div class="oc-line"><span class="l">Meddelande</span><span>${esc(o.customer.note)}</span></div>` : ''}
         ${customerInfo}
-        <div class="oc-line"><span class="l">Leverans</span><span>${esc(o.shipping.method)} Â· ${esc(o.payment.method)}</span></div>
+        <div class="oc-line"><span class="l">Leverans</span><span>${esc(o.shipping.method)} · ${esc(o.payment.method)}</span></div>
         ${discountInfo}
         <div class="oc-items">${items}</div>
         <div class="oc-total">Totalt: ${o.total.toLocaleString('sv-SE')} kr</div>
@@ -277,7 +303,7 @@ async function loadOrders() {
       </div>`;
     }).join('');
   } catch (e) {
-    box.innerHTML = '<div class="status">Kunde inte hÃ¤mta bestÃ¤llningar.</div>';
+    box.innerHTML = '<div class="status">Kunde inte hämta beställningar.</div>';
   }
 }
 
@@ -305,7 +331,7 @@ async function loadUsers() {
     const d = await r.json();
     const tbody = document.getElementById('userRows');
     if (!d.users || !d.users.length) {
-      tbody.innerHTML = '<tr><td colspan="4">Inga anvÃ¤ndare Ã¤nnu.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="4">Inga användare ännu.</td></tr>';
       return;
     }
     tbody.innerHTML = d.users.map(u => `<tr>
@@ -315,7 +341,7 @@ async function loadUsers() {
       <td>${u.orderCount}</td>
     </tr>`).join('');
   } catch (e) {
-    document.getElementById('userRows').innerHTML = '<tr><td colspan="4">Kunde inte hÃ¤mta anvÃ¤ndare.</td></tr>';
+    document.getElementById('userRows').innerHTML = '<tr><td colspan="4">Kunde inte hämta användare.</td></tr>';
   }
 }
 
@@ -331,19 +357,19 @@ async function loadCars() {
     tbody.innerHTML = d.cars.map(c => {
       const main = c.width && c.inch ? c.width + '/' + c.ratio + ' R' + c.inch : '';
       const extra = c.dims ? c.dims : '';
-      const dims = [main, extra].filter(Boolean).join(', ') || 'â€“';
+      const dims = [main, extra].filter(Boolean).join(', ') || '–';
       return `<tr>
       <td>${esc(c.brand)}</td>
       <td>${esc(c.model)}</td>
-      <td>${esc(c.years || 'â€“')}</td>
-      <td style="white-space:normal;max-width:220px">${esc(dims)}</td>`;
+      <td>${esc(c.years || '–')}</td>
+      <td style="white-space:normal;max-width:220px">${esc(dims)}</td>
       <td><button class="del" onclick="deleteCar(${c.id})">Ta bort</button></td>
     </tr>`).join('');
     const dl = document.getElementById('brand-list');
     const brands = [...new Set(d.cars.map(c => c.brand))];
     dl.innerHTML = brands.map(b => `<option value="${esc(b)}">`).join('');
   } catch (e) {
-    document.getElementById('carRows').innerHTML = '<tr><td colspan="5">Kunde inte hÃ¤mta bilar.</td></tr>';
+    document.getElementById('carRows').innerHTML = '<tr><td colspan="5">Kunde inte hämta bilar.</td></tr>';
   }
 }
 
@@ -355,7 +381,7 @@ async function addCar() {
   const ratio = document.getElementById('car-ratio').value.trim();
   const inch = document.getElementById('car-inch').value.trim();
   const dims = document.getElementById('car-dims').value.trim();
-  if (!brand || !model) { alert('Ange mÃ¤rke och modell.'); return; }
+  if (!brand || !model) { alert('Ange märke och modell.'); return; }
   const r = await fetch('/api/cars', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -371,7 +397,7 @@ async function addCar() {
     document.getElementById('car-dims').value = '';
     loadCars();
   } else {
-    alert('Kunde inte lÃ¤gga till bilen.');
+    alert('Kunde inte lägga till bilen.');
   }
 }
 
@@ -386,18 +412,18 @@ async function loadDiscounts() {
     const usersR = await fetch('/api/users');
     const usersD = await usersR.json();
     const sel = document.getElementById('discount-user');
-    sel.innerHTML = '<option value="">VÃ¤lj anvÃ¤ndare...</option>' + (usersD.users || []).map(u =>
-      `<option value="${u.id}">${esc(u.name)} Â· ${esc(u.email)}</option>`).join('');
+    sel.innerHTML = '<option value="">Välj användare...</option>' + (usersD.users || []).map(u =>
+      `<option value="${u.id}">${esc(u.name)} · ${esc(u.email)}</option>`).join('');
     const mfgR = await fetch('/api/manufacturers');
     const mfgD = await mfgR.json();
     const mfgSel = document.getElementById('discount-add-mfg');
-    mfgSel.innerHTML = '<option value="">VÃ¤lj mÃ¤rke...</option>' + (mfgD.items || []).map(m =>
+    mfgSel.innerHTML = '<option value="">Välj märke...</option>' + (mfgD.items || []).map(m =>
       `<option value="${esc(m)}">${esc(m)}</option>`).join('');
     const rabR = await fetch('/api/rabatter');
     const rabD = await rabR.json();
     discountData = (rabD.rabatter || []).reduce((acc, r) => { acc[r.userId] = r.perBrand || {}; return acc; }, {});
   } catch (e) {
-    alert('Kunde inte hÃ¤mta rabatter.');
+    alert('Kunde inte hämta rabatter.');
   }
 }
 
@@ -416,7 +442,7 @@ function renderDiscountRows(userId) {
   const rows = document.getElementById('discountRows');
   const brands = Object.keys(perBrand).sort((a, b) => a.localeCompare(b, 'sv'));
   if (!brands.length) {
-    rows.innerHTML = '<div class="status">Inga rabatter fÃ¶r denna anvÃ¤ndare Ã¤nnu. LÃ¤gg till nedan.</div>';
+    rows.innerHTML = '<div class="status">Inga rabatter för denna användare ännu. Lägg till nedan.</div>';
     return;
   }
   rows.innerHTML = brands.map((b, idx) => `<div class="rabatt-row">
@@ -444,7 +470,7 @@ function addDiscountBrand() {
   const userId = Number(document.getElementById('discount-user').value);
   const mfg = document.getElementById('discount-add-mfg').value;
   const pct = Number(document.getElementById('discount-add-pct').value);
-  if (!userId || !mfg) { alert('VÃ¤lj anvÃ¤ndare och mÃ¤rke.'); return; }
+  if (!userId || !mfg) { alert('Välj användare och märke.'); return; }
   if (!pct || pct < 1 || pct > 100) { alert('Ange rabatt mellan 1 och 100 %.'); return; }
   discountDirty[mfg] = pct;
   renderDiscountRows(userId);
@@ -480,7 +506,7 @@ async function loadSettings() {
     document.getElementById('set-hero-hl').value = s.heroHighlight || '';
     document.getElementById('set-hero-sub').value = s.heroSub || '';
   } catch (e) {
-    alert('Kunde inte hÃ¤mta texter.');
+    alert('Kunde inte hämta texter.');
   }
 }
 
@@ -522,14 +548,14 @@ async function load() {
     const tr = document.createElement('tr');
     tr.innerHTML =
       '<td>' + esc(p.supplier_reference || p.id) + '</td>' +
-      '<td>' + (p.type === 'falgar' ? 'FÃ¤lg' : 'DÃ¤ck') + '</td>' +
+      '<td>' + (p.type === 'falgar' ? 'Fälg' : 'Däck') + '</td>' +
       '<td>' + esc(p.manufacturer) + '</td>' +
       '<td class="wrap">' + esc(p.name) + '</td>' +
       '<td class="wrap">' + esc(p.info || '') + '</td>' +
       '<td class="price">' + (p.price ? p.price.toLocaleString('sv-SE') + ' kr' : '') + '</td>' +
       '<td>' + badge + '</td>' +
       '<td>' + (p.external_stock || 0) + '</td>' +
-      '<td>' + esc(p.external_delivery || 'â€“') + '</td>';
+      '<td>' + esc(p.external_delivery || '–') + '</td>';
     tbody.appendChild(tr);
   }
 }
@@ -567,10 +593,10 @@ async function refreshStatus() {
   const s = await r.json();
   const el = document.getElementById('statusText');
   if (s.syncing) {
-    el.textContent = 'Synkroniserar pÃ¥gÃ¥r...';
+    el.textContent = 'Synkroniserar pågår...';
     setTimeout(refreshStatus, 3000);
   } else {
-    el.textContent = 'Senast synkad: ' + (s.lastSync ? new Date(s.lastSync).toLocaleString('sv-SE') : 'aldrig') + ' Â· ' + s.productCount + ' produkter';
+    el.textContent = 'Senast synkad: ' + (s.lastSync ? new Date(s.lastSync).toLocaleString('sv-SE') : 'aldrig') + ' · ' + s.productCount + ' produkter';
   }
 }
 

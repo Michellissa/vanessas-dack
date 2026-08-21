@@ -1,10 +1,10 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Kassa ‚Äì Vanessas D√§ck</title>
-<link rel="stylesheet" href="/public/styles.css?v=10">
+<title>Kassa ñ Vanessas D‰ck</title>
+<link rel="stylesheet" href="/public/styles.css?v=11">
 <link rel="icon" href="/public/logo.svg">
 <style>
   .checkout-layout { display: grid; grid-template-columns: 1fr 340px; gap: 24px; align-items: start; padding: 28px 0; }
@@ -49,7 +49,7 @@
 <header id="site-header" class="site"></header>
 
 <div class="container">
-  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">‚Ä∫</span><a href="/varukorg">Varukorg</a><span class="sep">‚Ä∫</span><span>Kassa</span></div>
+  <div class="breadcrumbs"><a href="/">Hem</a><span class="sep">õ</span><a href="/varukorg">Varukorg</a><span class="sep">õ</span><span>Kassa</span></div>
 
   <div class="checkout-layout">
     <div>
@@ -62,20 +62,20 @@
       <div class="form-card" id="step1">
         <h3>Leveransalternativ</h3>
         <div class="radio-row" style="margin-bottom:22px">
-          <div class="radio-card sel" id="ship-butik" onclick="selectShip('butik')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"></path><path d="M3 9v11h18V9"></path><path d="M9 20v-6h6v6"></path></svg>H√§mta i butiken<div class="sub">Hos Vanessas D√§ck</div></div>
-          <div class="radio-card" id="ship-dhl" onclick="selectShip('dhl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"></path><path d="M16 8h4l3 3v5h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>Skicka med DHL<div class="sub">3‚Äì5 arbetsdagar ¬∑ 0 kr</div></div>
+          <div class="radio-card sel" id="ship-butik" onclick="selectShip('butik')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"></path><path d="M3 9v11h18V9"></path><path d="M9 20v-6h6v6"></path></svg>H‰mta i butiken<div class="sub">Hos Vanessas D‰ck</div></div>
+          <div class="radio-card" id="ship-dhl" onclick="selectShip('dhl')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3h15v13H1z"></path><path d="M16 8h4l3 3v5h-7V8z"></path><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>Skicka med DHL<div class="sub">3ñ5 arbetsdagar ∑ 0 kr</div></div>
         </div>
 
         <h3>Adress</h3>
         <div class="type-tabs">
           <button id="type-privat" class="active" onclick="setType('privat')">PRIVATPERSON</button>
-          <button id="type-foretag" onclick="setType('foretag')">F√ñRETAG</button>
+          <button id="type-foretag" onclick="setType('foretag')">F÷RETAG</button>
         </div>
 
         <div class="form-row">
           <div class="form-field">
             <label id="lbl-ssn">Personnummer *</label>
-            <input type="text" id="f-ssn" placeholder="√Ö√ÖMMDD-XXXX">
+            <input type="text" id="f-ssn" placeholder="≈≈MMDD-XXXX">
             <div class="err-txt">Ange personnummer</div>
           </div>
           <div class="form-field" id="org-field" style="display:none">
@@ -85,9 +85,9 @@
         </div>
         <div class="form-row">
           <div class="form-field">
-            <label>F√∂rnamn *</label>
+            <label>Fˆrnamn *</label>
             <input type="text" id="f-first" placeholder="Anna">
-            <div class="err-txt">Ange f√∂rnamn</div>
+            <div class="err-txt">Ange fˆrnamn</div>
           </div>
           <div class="form-field">
             <label>Efternamn *</label>
@@ -132,36 +132,36 @@
         </div>
         <div class="form-row">
           <div class="form-field">
-            <label>Bilm√§rke & modell</label>
+            <label>Bilm‰rke & modell</label>
             <input type="text" id="f-car" placeholder="Volvo V70">
           </div>
           <div class="form-field">
             <label>Meddelande</label>
-            <input type="text" id="f-note" placeholder="T.ex. montering √∂nskas">
+            <input type="text" id="f-note" placeholder="T.ex. montering ˆnskas">
           </div>
         </div>
         <div class="btn-row">
-          <a class="btn dark" href="/varukorg">‚Üê Tillbaka</a>
-          <button class="btn primary" onclick="goStep2()">G√• vidare till betalning ¬ª</button>
+          <a class="btn dark" href="/varukorg">? Tillbaka</a>
+          <button class="btn primary" onclick="goStep2()">GÂ vidare till betalning ª</button>
         </div>
       </div>
 
       <div class="form-card" id="step2" style="display:none">
-        <h3>Betalning ‚Äì Svea</h3>
-        <p style="color:var(--text-light);font-size:13px;margin-bottom:14px">Betalningen hanteras s√§kert av Svea Ekonomi.</p>
+        <h3>Betalning ñ Svea</h3>
+        <p style="color:var(--text-light);font-size:13px;margin-bottom:14px">Betalningen hanteras s‰kert av Svea Ekonomi.</p>
         <div class="radio-row" style="margin-bottom:20px">
           <div class="radio-card sel" id="pay-faktura" onclick="selectPay('faktura')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2h12v20l-2-1-2 1-2-1-2 1-2-1-2 1V2z"></path><path d="M8 7h8M8 11h8M8 15h5"></path></svg>Svea Faktura<div class="sub">Betala inom 14 dagar</div></div>
           <div class="radio-card" id="pay-kort" onclick="selectPay('kort')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>Svea Kortbetalning<div class="sub">Visa / Mastercard</div></div>
           <div class="radio-card" id="pay-del" onclick="selectPay('delbetalning')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"></rect><path d="M16 2v4M8 2v4M3 10h18"></path></svg>Svea Delbetalning<div class="sub">Dela upp betalningen</div></div>
         </div>
         <div class="order-card">
-          <div class="oc-row"><span class="l">Leverans</span><span id="sum-ship">H√§mtning i butik</span></div>
+          <div class="oc-row"><span class="l">Leverans</span><span id="sum-ship">H‰mtning i butik</span></div>
           <div class="oc-row"><span class="l">Kundtyp</span><span id="sum-type">Privatperson</span></div>
-          <div class="oc-row"><span class="l">Kund</span><span id="sum-name">‚Äî</span></div>
+          <div class="oc-row"><span class="l">Kund</span><span id="sum-name">ó</span></div>
         </div>
         <div class="btn-row">
-          <button class="btn dark" onclick="backTo1()">‚Üê Tillbaka</button>
-          <button class="btn primary" onclick="placeOrder()">L√§gg best√§llning ‚úì</button>
+          <button class="btn dark" onclick="backTo1()">? Tillbaka</button>
+          <button class="btn primary" onclick="placeOrder()">L‰gg best‰llning ?</button>
         </div>
       </div>
 
@@ -171,7 +171,7 @@
     </div>
 
     <aside class="cart-summary" style="background:#fff;border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);position:sticky;top:90px">
-      <h3>Din best√§llning</h3>
+      <h3>Din best‰llning</h3>
       <div id="checkoutItems"></div>
       <div class="sum-row" style="display:flex;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--text-light)"><span>Frakt</span><span>0 kr</span></div>
       <div class="sum-row" id="discountRow" style="display:none;justify-content:space-between;padding:6px 0;font-size:14px;color:var(--green);font-weight:600"><span>Rabatt</span><span id="discountTotal"></span></div>
@@ -182,7 +182,7 @@
 
 <footer id="site-footer"></footer>
 
-<script src="/public/app.js?v=10"></script>
+<script src="/public/app.js?v=11"></script>
 <script>
 injectHeader('/kassan');
 
@@ -204,11 +204,11 @@ function renderCheckout() {
   let discount = 0;
   for (let i = 0; i < cart.length; i++) discount += (cart[i].price - priced[i].price) * (cart[i].qty || 1);
   document.getElementById('checkoutItems').innerHTML = priced.length
-    ? priced.map(i => `<div class="order-card"><div class="oc-row"><span class="l">${i.qty} √ó ${APP.esc(i.manufacturer || '')} ${APP.esc(i.name)}</span><span>${APP.money((i.price || 0) * i.qty)}${i.pct ? ` <span style="color:var(--green);font-size:12px">(${i.pct}% rabatt)</span>` : ''}</span></div><div class="oc-row" style="font-size:12px"><span class="l">${APP.esc(i.info || '')}</span></div></div>`).join('')
-    : '<p style="color:var(--text-light);font-size:14px">Varukorgen √§r tom.</p>';
+    ? priced.map(i => `<div class="order-card"><div class="oc-row"><span class="l">${i.qty} ◊ ${APP.esc(i.manufacturer || '')} ${APP.esc(i.name)}</span><span>${APP.money((i.price || 0) * i.qty)}${i.pct ? ` <span style="color:var(--green);font-size:12px">(${i.pct}% rabatt)</span>` : ''}</span></div><div class="oc-row" style="font-size:12px"><span class="l">${APP.esc(i.info || '')}</span></div></div>`).join('')
+    : '<p style="color:var(--text-light);font-size:14px">Varukorgen ‰r tom.</p>';
   const total = priced.reduce((s, i) => s + (i.price || 0) * (i.qty || 1), 0);
   document.getElementById('discountRow').style.display = discount > 0 ? 'flex' : 'none';
-  document.getElementById('discountTotal').textContent = '‚àí ' + APP.money(discount);
+  document.getElementById('discountTotal').textContent = '- ' + APP.money(discount);
   document.getElementById('checkoutTotal').textContent = APP.money(total);
 }
 
@@ -246,7 +246,7 @@ function validate1() {
   let ok = true;
   const fields = [
     ['f-ssn', 'Ange personnummer'],
-    ['f-first', 'Ange f√∂rnamn'],
+    ['f-first', 'Ange fˆrnamn'],
     ['f-last', 'Ange efternamn'],
     ['f-address', 'Ange din adress'],
     ['f-zip', 'Ange postnummer'],
@@ -266,8 +266,8 @@ function validate1() {
 
 function goStep2() {
   if (!validate1()) return;
-  document.getElementById('sum-ship').textContent = shipMethod === 'dhl' ? 'Skicka med DHL' : 'H√§mtning i butik';
-  document.getElementById('sum-type').textContent = custType === 'foretag' ? 'F√∂retag' : 'Privatperson';
+  document.getElementById('sum-ship').textContent = shipMethod === 'dhl' ? 'Skicka med DHL' : 'H‰mtning i butik';
+  document.getElementById('sum-type').textContent = custType === 'foretag' ? 'Fˆretag' : 'Privatperson';
   document.getElementById('sum-name').textContent =
     document.getElementById('f-first').value.trim() + ' ' + document.getElementById('f-last').value.trim();
   setStep(2);
@@ -278,12 +278,12 @@ function backTo1() { setStep(1); }
 async function placeOrder() {
   const cart = APP.getCart();
   if (!cart.length) {
-    alert('Varukorgen √§r tom.');
+    alert('Varukorgen ‰r tom.');
     return;
   }
   const order = {
     customer: {
-      type: custType === 'foretag' ? 'F√∂retag' : 'Privatperson',
+      type: custType === 'foretag' ? 'Fˆretag' : 'Privatperson',
       ssn: document.getElementById('f-ssn').value.trim(),
       orgnr: document.getElementById('f-orgnr').value.trim(),
       firstname: document.getElementById('f-first').value.trim(),
@@ -297,7 +297,7 @@ async function placeOrder() {
       car: document.getElementById('f-car').value.trim(),
       note: document.getElementById('f-note').value.trim()
     },
-    shipping: { method: shipMethod === 'dhl' ? 'Skicka med DHL' : 'H√§mta i butiken' },
+    shipping: { method: shipMethod === 'dhl' ? 'Skicka med DHL' : 'H‰mta i butiken' },
     payment: { method: payMethod === 'faktura' ? 'Svea Faktura' : payMethod === 'delbetalning' ? 'Svea Delbetalning' : 'Svea Kortbetalning' },
     items: cart.map(i => ({
       productId: i.id,
@@ -320,15 +320,15 @@ async function placeOrder() {
       body: JSON.stringify(order)
     });
     const d = await res.json();
-    if (!res.ok) throw new Error(d.error || 'N√•got gick fel');
+    if (!res.ok) throw new Error(d.error || 'NÂgot gick fel');
     APP.clearCart();
     document.getElementById('successBox').innerHTML = `
       <div class="icon"><svg viewBox="0 0 24 24" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><path d="M22 4L12 14.01l-3-3"></path></svg></div>
-      <h2>Tack f√∂r din best√§llning!</h2>
+      <h2>Tack fˆr din best‰llning!</h2>
       <div class="order-nr">Ordernummer: ${APP.esc(d.order.id)}</div>
-      <p class="info">En bekr√§ftelse har skickats till ${APP.esc(d.order.customer.email)}.<br>Vi kontaktar dig inom kort f√∂r att bekr√§fta leverans.</p>
+      <p class="info">En bekr‰ftelse har skickats till ${APP.esc(d.order.customer.email)}.<br>Vi kontaktar dig inom kort fˆr att bekr‰fta leverans.</p>
       <div class="order-card">
-        <div class="oc-row"><span class="l">Best√§llt</span><span>${new Date(d.order.created).toLocaleString('sv-SE')}</span></div>
+        <div class="oc-row"><span class="l">Best‰llt</span><span>${new Date(d.order.created).toLocaleString('sv-SE')}</span></div>
         <div class="oc-row"><span class="l">Leverans</span><span>${APP.esc(d.order.shipping.method)}</span></div>
         <div class="oc-row"><span class="l">Betalning</span><span>${APP.esc(d.order.payment.method)}</span></div>
         <div class="oc-row"><span class="l">Totalt</span><span>${APP.money(d.order.total)}</span></div>
@@ -337,7 +337,7 @@ async function placeOrder() {
     setStep(3);
   } catch (e) {
     btn.disabled = false;
-    btn.textContent = 'L√§gg best√§llning ‚úì';
+    btn.textContent = 'L‰gg best‰llning ?';
     alert(e.message);
   }
 }

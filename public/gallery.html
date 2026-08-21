@@ -1,9 +1,9 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sv">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vanessas DÃ¤ck â€“ Bildgalleri</title>
+<title>Vanessas Däck – Bildgalleri</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f6f8; color: #0e1524; }
@@ -39,20 +39,20 @@
 <body>
 <header>
   <div>
-    <h1>Vanessas DÃ¤ck â€“ Bildgalleri</h1>
+    <h1>Vanessas Däck – Bildgalleri</h1>
     <div class="count" id="count"></div>
   </div>
-  <a href="/">â† Till lagersaldo</a>
+  <a href="/">? Till lagersaldo</a>
 </header>
 <div class="toolbar">
-  <input type="text" id="search" placeholder="SÃ¶k pÃ¥ mÃ¤rke, modell eller dimension..." oninput="onSearch()">
+  <input type="text" id="search" placeholder="Sök på märke, modell eller dimension..." oninput="onSearch()">
   <label><input type="checkbox" id="stockOnly" onchange="onSearch()"> Endast i lager</label>
   <label><input type="radio" name="type" value="" checked onchange="onSearch()"> Alla</label>
-  <label><input type="radio" name="type" value="dack" onchange="onSearch()"> DÃ¤ck</label>
-  <label><input type="radio" name="type" value="falgar" onchange="onSearch()"> FÃ¤lgar</label>
+  <label><input type="radio" name="type" value="dack" onchange="onSearch()"> Däck</label>
+  <label><input type="radio" name="type" value="falgar" onchange="onSearch()"> Fälgar</label>
 </div>
 <div class="grid" id="grid"></div>
-<div class="empty" id="empty" style="display:none">Inga bilder matchade sÃ¶kningen.</div>
+<div class="empty" id="empty" style="display:none">Inga bilder matchade sökningen.</div>
 <div id="lightbox" onclick="this.style.display='none'"><img id="lightboxImg" src="" alt=""></div>
 <script>
 async function load() {
