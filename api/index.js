@@ -283,6 +283,56 @@ function filterProducts(products, params) {
   return list;
 }
 
+function parseDimsList(s) {
+  const out = [];
+  for (const part of String(s || '').split(',')) {
+    const m = String(part).trim().match(/^(\d{3})\s*\/\s*(\d{2,3})\s*R\s*(\d{2})$/i);
+    if (m) out.push({ width: m[1], ratio: m[2], inch: m[3], label: m[1] + '/' + m[2] + ' R' + m[3] });
+  }
+  return out;
+}
+
+function fittingDimsForCar(car) {
+  const products = readProducts();
+  const available = new Map();
+  for (const p of products) {
+    if (p.type && p.type !== 'dack') continue;
+    const w = String(p.width || '').trim();
+    const r = String(p.profile || '').trim();
+    const ii = String(p.inch || '').trim();
+    if (!w || !r || !ii) continue;
+    const key = w + '/' + r + ' R' + ii;
+    available.set(key, (available.get(key) || 0) + 1);
+  }
+  const bases = [];
+  if (car.width && car.ratio && car.inch) bases.push({ width: car.width, ratio: car.ratio, inch: car.inch, original: true });
+  for (const d of parseDimsList(car.dims)) bases.push({ width: d.width, ratio: d.ratio, inch: d.inch, original: false });
+  if (bases.length === 0) return [];
+  const result = new Map();
+  for (const b of bases) {
+    const w0 = parseInt(b.width, 10), r0 = parseInt(b.ratio, 10), i0 = parseInt(b.inch, 10);
+    if (!(w0 && r0 && i0)) continue;
+    const baseKey = w0 + '/' + r0 + ' R' + i0;
+    const cnt = available.get(baseKey) || 0;
+    if (cnt > 0) result.set(baseKey, { width: String(w0), ratio: String(r0), inch: String(i0), count: cnt, original: b.original });
+    const d0 = i0 * 25.4 + 2 * w0 * r0 / 100;
+    for (let w = Math.max(135, w0 - 30); w <= Math.min(355, w0 + 30); w += 10) {
+      for (let r = Math.max(25, r0 - 20); r <= Math.min(85, r0 + 20); r += 5) {
+        if (w === w0 && r === r0) continue;
+        const d = i0 * 25.4 + 2 * w * r / 100;
+        if (Math.abs(d - d0) / d0 > 0.03) continue;
+        const key2 = w + '/' + r + ' R' + i0;
+        if (result.has(key2)) continue;
+        const c2 = available.get(key2) || 0;
+        if (c2 > 0) result.set(key2, { width: String(w), ratio: String(r), inch: String(i0), count: c2, original: false });
+      }
+    }
+  }
+  const arr = [...result.values()];
+  arr.sort((a, b) => (b.original - a.original) || (b.count - a.count));
+  return arr;
+}
+
 function sortProducts(list, sort) {
   switch (sort) {
     case 'price_asc':
@@ -562,13 +612,13 @@ async function handle(req, res) {
       }
       const car = brandCars.find(c => 'adm-m-' + c.id === model);
       const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
-      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch } : null });
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch, dims: car.dims || '' } : null, fittingDims: car ? fittingDimsForCar(car) : [] });
       return;
     }
     if (model && model.startsWith('adm-m-')) {
       const car = cars.find(c => 'adm-m-' + c.id === model);
       const years = (car && car.years ? String(car.years) : '').split(',').map(y => y.trim()).filter(Boolean);
-      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch } : null });
+      sendJson(res, 200, { items: years.map(y => ({ id: 'adm-y-' + car.id, name: y })), car: car ? { width: car.width, ratio: car.ratio, inch: car.inch, dims: car.dims || '' } : null, fittingDims: car ? fittingDimsForCar(car) : [] });
       return;
     }
     let up;
@@ -991,7 +1041,8 @@ async function handle(req, res) {
           years: d.years ? String(d.years).trim() : '',
           width: d.width ? String(d.width).trim() : '',
           ratio: d.ratio ? String(d.ratio).trim() : '',
-          inch: d.inch ? String(d.inch).trim() : ''
+          inch: d.inch ? String(d.inch).trim() : '',
+          dims: d.dims ? String(d.dims).trim() : ''
         });
         sendJson(res, 200, { success: true, car });
       } catch {

@@ -65,6 +65,9 @@ function openDb(dbFile) {
     db.exec("ALTER TABLE cars ADD COLUMN ratio TEXT NOT NULL DEFAULT ''");
     db.exec("ALTER TABLE cars ADD COLUMN inch TEXT NOT NULL DEFAULT ''");
   }
+  if (!carCols.includes('dims')) {
+    db.exec("ALTER TABLE cars ADD COLUMN dims TEXT NOT NULL DEFAULT ''");
+  }
 
   return {
     users: {
@@ -98,8 +101,8 @@ function openDb(dbFile) {
     cars: {
       all: () => db.prepare('SELECT * FROM cars ORDER BY id').all(),
       insert: c => {
-        const info = db.prepare('INSERT INTO cars (brand, model, years, width, ratio, inch) VALUES (?, ?, ?, ?, ?, ?)')
-          .run(c.brand, c.model, c.years || '', c.width || '', c.ratio || '', c.inch || '');
+        const info = db.prepare('INSERT INTO cars (brand, model, years, width, ratio, inch, dims) VALUES (?, ?, ?, ?, ?, ?, ?)')
+          .run(c.brand, c.model, c.years || '', c.width || '', c.ratio || '', c.inch || '', c.dims || '');
         return { id: Number(info.lastInsertRowid), ...c };
       },
       remove: id => db.prepare('DELETE FROM cars WHERE id = ?').run(id)

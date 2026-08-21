@@ -771,6 +771,15 @@ footer.site .bottom { border-top: 1px solid rgba(255, 255, 255, .1); padding-top
 .guide-body select:disabled { background: var(--bg); color: var(--text-light); cursor: not-allowed; }
 .guide-body .g-info { flex: 1 1 100%; font-size: 13.5px; color: var(--text-light); font-weight: 600; }
 .guide-body .g-info b { color: var(--primary-dark); }
+.g-dims { display: flex; flex-wrap: wrap; gap: 8px; flex: 1 1 100%; align-items: center; margin-top: 4px; }
+.g-dims-label { flex: 1 1 100%; font-size: 12.5px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: .04em; }
+.g-dim { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1.5px solid var(--border); border-radius: 999px; padding: 7px 14px; font-size: 13.5px; font-weight: 700; cursor: pointer; font-family: inherit; transition: border-color .15s, background .15s, color .15s; }
+.g-dim:hover { border-color: var(--accent); color: var(--accent); }
+.g-dim.active { background: var(--primary-dark); color: #fff; border-color: var(--primary-dark); }
+.g-dim .cnt { font-size: 12px; font-weight: 600; color: var(--text-light); }
+.g-dim.active .cnt { color: rgba(255,255,255,.7); }
+.g-dim .orig { font-size: 10.5px; font-weight: 800; background: var(--accent); color: #fff; padding: 2px 7px; border-radius: 999px; letter-spacing: .04em; text-transform: uppercase; }
+.g-dim.active .orig { background: #fff; color: var(--accent); }
 
 /* Aktiva filter-chips */
 .chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
